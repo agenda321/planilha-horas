@@ -343,12 +343,12 @@ function mostrarComparativoDia(diaIndex) {
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const nome = row.cells[0].innerText.trim();
         let grupo = "CESSNA 206/210";
-        if (["Cleiton","João","Páscoal","Lindomar","Perisson","Rui","Yago"].includes(nome)) grupo = "CARAVAN";
-        else if (["Cauê","Felipe","Ruben","Ernesto","Daniela","Thales","Serafim","Ronaldo","Rodrigo","Thiago"].includes(nome)) grupo = "COPILOTO";
+        if (["Cleiton","Joao","Pascoal","Lindomar","Perisson","Rui","Yago"].includes(nome)) grupo = "CARAVAN";
+        else if (["Cauê","Felipe","Ruben","Ernesto","Daniela","Thales","Serafim","Ronaldo","Rodrigo","Tiago"].includes(nome)) grupo = "COPILOTO";
         if (!gruposMap[grupo]) gruposMap[grupo] = [];
         gruposMap[grupo].push({ nome, horas: dadosDia[nome] || 0 });
     });
-    let html = `<div class="card-detalhe"><h2>📅 Dia ${String(diaNumero).padStart(2,'0')}</h2>`;
+    let html = `<div class="card-detalhe"><h2>���� Dia ${String(diaNumero).padStart(2,'0')}</h2>`;
     for (let grupo in gruposMap) {
         let lista = gruposMap[grupo].sort((a,b)=>b.horas - a.horas);
         const media = lista.reduce((s,p)=>s+p.horas,0)/lista.length;
@@ -430,7 +430,7 @@ async function carregarDoBackend() {
                     inp.value = formatarHora(valor);
                     total += valor;
                     inp.addEventListener('input', function() { if (diaEditandoIndex !== null || isEditing) { atualizarTotalLinha(row); recalcularTudo(); if(isEditing) salvarNoBackend(); } });
-                    inp.addEventListener('blur', function() { if (diaEditandoIndex !== null || isEditing) { let v = parseHora(this.value); this.value = formatarHora(v); atualizarTotalLinha(row); [...]
+                    inp.addEventListener('blur', function() { if (diaEditandoIndex !== null || isEditing) { let v = parseHora(this.value); this.value = formatarHora(v); atualizarTotalLinha(row); recalcularTudo(); } });
                     td.appendChild(inp);
                     row.appendChild(td);
                 }
