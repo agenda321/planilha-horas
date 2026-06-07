@@ -348,11 +348,11 @@ function mostrarComparativoDia(diaIndex) {
         if (!gruposMap[grupo]) gruposMap[grupo] = [];
         gruposMap[grupo].push({ nome, horas: dadosDia[nome] || 0 });
     });
-    let html = `<div class="card-detalhe"><h2>���� Dia ${String(diaNumero).padStart(2,'0')}</h2>`;
+    let html = `<div class="card-detalhe"><h2>📅 Dia ${String(diaNumero).padStart(2,'0')}</h2>`;
     for (let grupo in gruposMap) {
         let lista = gruposMap[grupo].sort((a,b)=>b.horas - a.horas);
         const media = lista.reduce((s,p)=>s+p.horas,0)/lista.length;
-        html += `<h3>${grupo}</h3><p>Média: ${formatarHora(media)} h</p><table class="tabela-detalhe">`;
+        html += `<h3>${grupo}</h3><p>Média: ${formatarHora(media)} h</p><table class="tabela-detalhe"><tr><th>Piloto</th><th>Horas</th><th>vs Média</th></tr>`;
         lista.forEach(p => {
             const diff = p.horas - media;
             html += `<tr><td>${p.nome}</td><td>${formatarHora(p.horas)}</td><td style="color:${diff>=0?'green':'red'}">${diff>=0?'+':''}${formatarHora(diff)}</td></tr>`;
@@ -429,8 +429,22 @@ async function carregarDoBackend() {
                     const valor = logs[p.name]?.[i+1] || 0;
                     inp.value = formatarHora(valor);
                     total += valor;
-                    inp.addEventListener('input', function() { if (diaEditandoIndex !== null || isEditing) { atualizarTotalLinha(row); recalcularTudo(); if(isEditing) salvarNoBackend(); } });
-                    inp.addEventListener('blur', function() { if (diaEditandoIndex !== null || isEditing) { let v = parseHora(this.value); this.value = formatarHora(v); atualizarTotalLinha(row); recalcularTudo(); } });
+                    inp.addEventListener('input', function() { 
+                        if (diaEditandoIndex !== null || isEditing) { 
+                            atualizarTotalLinha(row); 
+                            recalcularTudo(); 
+                            if(isEditing && password) salvarNoBackend(); 
+                        } 
+                    });
+                    inp.addEventListener('blur', function() { 
+                        if (diaEditandoIndex !== null || isEditing) { 
+                            let v = parseHora(this.value); 
+                            this.value = formatarHora(v); 
+                            atualizarTotalLinha(row); 
+                            recalcularTudo(); 
+                            if(isEditing && password) salvarNoBackend();
+                        } 
+                    });
                     td.appendChild(inp);
                     row.appendChild(td);
                 }
@@ -460,9 +474,9 @@ async function salvarNoBackend() {
     });
     try {
         await fetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password, logs }) });
-        document.getElementById('syncStatus').innerHTML = '✅ Salvo';
-        setTimeout(() => document.getElementById('syncStatus').innerHTML = '💾 Sincronizado', 2000);
-    } catch(e) { document.getElementById('syncStatus').innerHTML = '❌ Erro ao salvar'; }
+        const syncSpan = document.getElementById('syncStatus');
+        if(syncSpan) { syncSpan.innerHTML = '✅ Salvo'; setTimeout(() => syncSpan.innerHTML = '💾 Sincronizado', 2000); }
+    } catch(e) { const syncSpan = document.getElementById('syncStatus'); if(syncSpan) syncSpan.innerHTML = '❌ Erro ao salvar'; }
 }
 
 function criarBotoesDias() {
