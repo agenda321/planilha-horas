@@ -10,9 +10,10 @@ services:
           name: agenda321_db
           property: connectionString
       - key: EDIT_PASSWORD
-        value: Emerson
+        sync: false
     autoDeploy: true
 
 databases:
   - name: agenda321_db
     plan: free
+
