@@ -10,7 +10,7 @@ services:
           name: agenda321_db
           property: connectionString
       - key: EDIT_PASSWORD
-        sync: false
+        value: Emerson
     autoDeploy: true
 
 databases:
