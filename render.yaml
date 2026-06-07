@@ -15,5 +15,6 @@ services:
 
 databases:
   - name: agenda321_db
+    databaseName: agenda321
+    user: agenda321
     plan: free
-
