@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Planilha de Voo | Registro de Horas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at 20% 30%, #b87c4f, #6e4a2e);
+            font-family: 'Segoe UI', 'Georgia', serif;
+            padding: 24px 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .skeuo-container {
+            max-width: 1400px;
+            width: 100%;
+            background: #e2d6c0;
+            background-image: repeating-linear-gradient(45deg, #dacaa8 0px, #dacaa8 2px, #efe3c9 2px, #efe3c9 8px);
+            border-radius: 48px;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.5), inset 0 1px 4px rgba(255,255,200,0.8);
+            padding: 20px;
+        }
+        .planilha-card {
+            background: #fcf7e8;
+            border-radius: 32px;
+            box-shadow: inset 0 0 0 2px #fff9e8, inset 0 0 0 6px #d9c894, 0 12px 28px rgba(0,0,0,0.4);
+            padding: 8px 0 12px;
+        }
+        .cabecalho-skeuo {
+            padding: 12px 30px;
+            border-bottom: 3px solid #b28b5e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            background: linear-gradient(to bottom, #fdf5e0, #f4e5ca);
+            border-radius: 28px 28px 18px 18px;
+            margin-bottom: 16px;
+            gap: 15px;
+        }
+        .title-area { display: flex; align-items: baseline; gap: 15px; flex-wrap: wrap; }
+        h1 { font-family: Georgia; font-size: 1.8rem; margin: 0; color: #3b2a1f; text-shadow: 3px 3px 0 #cdb086; }
+        .mes-editavel {
+            background: #f9f2e0; border: 2px solid #c9aa77; border-radius: 60px;
+            padding: 6px 16px; font-family: monospace; font-size: 1rem; font-weight: bold;
+            width: 130px; text-align: center;
+        }
+        .mes-editavel:disabled { background: #e9e0cf; opacity: 0.8; }
+        .badge-senha {
+            background: #b97f4b; border-radius: 60px; padding: 6px 16px;
+            font-size: 0.75rem; font-weight: bold; color: #fff1cf;
+            box-shadow: inset 0 1px 2px #ffdd99, 0 3px 6px rgba(0,0,0,0.2);
+        }
+        .btn-skeuo {
+            background: radial-gradient(circle at 30% 20%, #f3de9f, #cb9e6b);
+            border: none; font-size: 0.85rem; font-weight: bold; padding: 8px 18px;
+            border-radius: 60px; box-shadow: 0 5px 0 #7a4f2c; cursor: pointer; transition: 0.05s linear;
+        }
+        .btn-skeuo:active { transform: translateY(3px); box-shadow: 0 2px 0 #7a4f2c; }
+        .btn-skeuo:disabled { opacity: 0.55; cursor: default; transform: none; }
+        .button-group { display: flex; gap: 12px; flex-wrap: wrap; }
+        .top-actions {
+            padding: 0 20px; display: flex; justify-content: space-between;
+            flex-wrap: wrap; gap: 15px; margin-bottom: 20px;
+        }
+        .dias-botoes {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+            margin: 16px 20px; padding: 12px; background: #ddcdac;
+            border-radius: 40px; box-shadow: inset 0 0 0 2px #fef1cf, inset 0 0 0 4px #c2a570;
+        }
+        .btn-dia {
+            background: radial-gradient(circle at 30% 20%, #f0dc9f, #c29a5e);
+            border: none; font-size: 0.8rem; font-weight: bold; padding: 6px 0;
+            border-radius: 60px; box-shadow: 0 3px 0 #6b4828; cursor: pointer;
+            transition: 0.05s linear; text-align: center; display: flex;
+            flex-direction: column; align-items: center; gap: 2px; line-height: 1.2;
+        }
+        .btn-dia.dia-selecionado {
+            background: radial-gradient(circle at 30% 20%, #ffe066, #e6a800);
+            box-shadow: 0 3px 0 #7a5200, 0 0 10px 3px rgba(230,167,0,0.5);
+            color: #3b2a00;
+        }
+        .btn-dia.dia-editando {
+            background: radial-gradient(circle at 30% 20%, #a5d6a5, #6f9e6f);
+            box-shadow: 0 3px 0 #3e6b3e;
+        }
+        .btn-dia .dia-num { font-size: 0.9rem; font-weight: bold; }
+        .btn-dia .dia-total { font-size: 0.65rem; color: #5a3a10; }
+        .btn-dia.tem-dados .dia-total { color: #a05000; font-weight: bold; }
+        .table-wrapper {
+            overflow-x: auto; margin: 20px 12px; background: #ddcdac;
+            padding: 8px; border-radius: 24px; max-height: 60vh;
+        }
+        .planilha { width: 100%; border-collapse: collapse; background: #fff6e8; min-width: 1000px; }
+        .planilha th, .planilha td { border: 1px solid #ebddbb; padding: 8px 4px; text-align: center; }
+        .planilha th {
+            background: linear-gradient(to bottom, #b88954, #7e5937);
+            color: #fff4e0; position: sticky; top: 0; z-index: 10;
+        }
+        .planilha td:first-child {
+            background: #f7efdc; font-weight: bold; text-align: left;
+            position: sticky; left: 0; z-index: 5; border-right: 2px solid #dbb87a;
+        }
+        .planilha th:first-child { position: sticky; left: 0; z-index: 15; background: #9c7a50; }
+        .planilha th.col-ativa { background: linear-gradient(to bottom, #e6a800, #a07000) !important; }
+        .planilha td.col-ativa { background: #fffacc !important; }
+        .input-hora {
+            width: 70px; padding: 6px; text-align: center; font-family: monospace;
+            background: #f9f2e0; border: 2px solid #c9aa77; border-radius: 16px;
+        }
+        .input-hora.has-value { background: #fff1b5; border-color: #e4b149; box-shadow: 0 0 6px gold; }
+        .input-hora.streak-day { background: #ffcc99; border-color: #e67300; }
+        .total-cell { background: #e7dbbc; font-weight: bold; }
+        .group-title-row td {
+            background: linear-gradient(135deg, #ccaa7a, #b1834d);
+            font-weight: bold; font-size: 1.2rem; text-align: center;
+        }
+        .info-footer {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; margin: 16px 24px; gap: 12px;
+        }
+        .legenda {
+            background: #eedbba; border-radius: 36px; padding: 6px 18px;
+            font-size: 11px; display: flex; gap: 20px; flex-wrap: wrap;
+        }
+        .status-chip {
+            background: #4c351e; border-radius: 60px; padding: 5px 15px;
+            font-size: 0.7rem; font-weight: bold; color: #ffe1a0;
+            box-shadow: inset 0 1px 3px #ffdf9a, 0 2px 4px black;
+        }
+        .modal-senha, .modal-detalhe {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(6px);
+            display: flex; align-items: center; justify-content: center; z-index: 2000;
+        }
+        .card-senha, .card-detalhe {
+            background: #fdf5e6; border-radius: 48px; width: 90%; max-width: 650px;
+            padding: 24px; box-shadow: 0 20px 35px black; max-height: 85vh; overflow-y: auto;
+        }
+        .card-senha { text-align: center; max-width: 350px; }
+        .card-senha input {
+            width: 100%; padding: 12px; margin: 20px 0; border-radius: 60px;
+            border: 2px solid #b67e45; background: #fff2e0; font-size: 1rem;
+            text-align: center;
+        }
+        .botoes-senha { display: flex; gap: 15px; justify-content: center; }
+        .btn-modal {
+            background: #a07143; color: white; border: none; padding: 8px 22px;
+            border-radius: 60px; cursor: pointer;
+        }
+        .tabela-detalhe { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .tabela-detalhe th, .tabela-detalhe td {
+            border: 1px solid #ccb28b; padding: 8px; text-align: left;
+        }
+        .btn-fechar {
+            background: #b07842; border: none; padding: 10px 28px;
+            border-radius: 60px; color: white; margin-top: 20px;
+            cursor: pointer; display: block; margin-left: auto; margin-right: auto;
+        }
+        .badge-dia-edicao {
+            background: #e6a800; border-radius: 60px; padding: 5px 14px;
+            font-size: 0.75rem; font-weight: bold; color: #3b2a00;
+            display: none;
+        }
+        .badge-dia-edicao.visivel { display: inline-block; }
+        .btn-disponiveis {
+            background: radial-gradient(circle at 30% 20%, #7a9e6b, #557a44);
+            margin-left: auto;
+        }
+        .sync-status {
+            font-size: 0.7rem;
+            background: #4c351e;
+            padding: 4px 12px;
+            border-radius: 60px;
+            color: #ffe1a0;
+        }
+    </style>
+</head>
+<body>
+<div class="skeuo-container">
+    <div class="planilha-card">
+        <div class="cabecalho-skeuo">
+            <div class="title-area">
+                <h1>✈️ REGISTRO DE HORAS</h1>
+                <input type="text" id="campoMes" class="mes-editavel" value="Junho" disabled>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <span class="badge-dia-edicao" id="badgeDiaEdicao">✏️ EDITANDO DIA --</span>
+                <div class="badge-senha" id="statusBadge">🔒 SOMENTE LEITURA</div>
+            </div>
+        </div>
+        <div class="top-actions">
+            <div class="button-group">
+                <button class="btn-skeuo" id="btnDesbloquear">🔐 DESBLOQUEAR</button>
+                <button class="btn-skeuo" id="btnLimpar" disabled>🧹 LIMPAR</button>
+                <button class="btn-skeuo" id="btnBloquear" disabled>🔒 BLOQUEAR</button>
+                <button class="btn-skeuo" id="btnSairDia" style="display:none">✖ SAIR DO DIA</button>
+            </div>
+        </div>
+        <div class="dias-botoes" id="botoesDias"></div>
+        <div class="table-wrapper">
+            <table class="planilha" id="tabelaHoras">
+                <thead id="tableHeader"></thead>
+                <tbody id="planilhaBody"></tbody>
+                <tfoot id="tfootTotal"></tfoot>
+            </table>
+        </div>
+        <div class="info-footer">
+            <div class="legenda">
+                <span><i class="fas fa-plane"></i> Cessna 206/210</span>
+                <span><i class="fas fa-plane"></i> Caravan</span>
+                <span><i class="fas fa-headset"></i> Copiloto</span>
+                <span><i class="fas fa-exclamation-triangle"></i> 6+ dias consecutivos</span>
+                <span><i class="fas fa-chart-simple"></i> Clique num dia para referência</span>
+            </div>
+            <button class="btn-skeuo btn-disponiveis" id="btnDisponiveis">👥 CMTES DISPONÍVEIS</button>
+            <div class="status-chip" id="editModeChip">📖 MODO VISUALIZAÇÃO</div>
+        </div>
+    </div>
+</div>
+
+<script>
+let DIAS = 30;
+let isEditing = false;
+let diaEditandoIndex = null;
+let diaReferencia = null;
+let password = "";
+
+function parseHora(v) { if (!v) return 0; let n = parseFloat(String(v).trim().replace(',','.')); return isNaN(n) ? 0 : n; }
+function formatarHora(n) { return n.toFixed(1).replace('.',','); }
+
+function atualizarTotalLinha(row) {
+    let inputs = row.querySelectorAll('.input-hora');
+    let soma = 0;
+    inputs.forEach(inp => { soma += parseHora(inp.value); inp.classList.toggle('has-value', parseHora(inp.value) > 0); });
+    let totalCell = row.querySelector('.total-cell');
+    if (totalCell) { totalCell.textContent = formatarHora(soma); totalCell.setAttribute('data-valor-raw', soma); }
+    return soma;
+}
+
+function validarStreaks() {
+    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
+        const inputs = row.querySelectorAll('.input-hora');
+        const vals = Array.from(inputs).map(inp => parseHora(inp.value) > 0 ? 1 : 0);
+        let streak = 0, seq = new Array(DIAS).fill(false);
+        for (let i = 0; i < DIAS; i++) {
+            if (vals[i]) { streak++; if (streak >= 6) for (let j = i - streak + 1; j <= i; j++) seq[j] = true; }
+            else streak = 0;
+        }
+        inputs.forEach((inp, i) => inp.classList.toggle('streak-day', seq[i]));
+        let nomeCell = row.querySelector('td:first-child');
+        let icon = nomeCell.querySelector('.alert-icon');
+        if (seq.some(v => v)) {
+            if (!icon) { let ic = document.createElement('i'); ic.className = 'fas fa-exclamation-triangle alert-icon'; ic.title = '6+ dias consecutivos'; nomeCell.appendChild(ic); }
+        } else if (icon) icon.remove();
+    });
+}
+
+function recalcularTudo() {
+    let somaGeral = 0;
+    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => somaGeral += atualizarTotalLinha(row));
+    let tfoot = document.getElementById('tfootTotal'); tfoot.innerHTML = '';
+    let tr = document.createElement('tr');
+    tr.innerHTML = `<td style="font-weight:bold">🏁 TOTAL GERAL</td>${'<td></td>'.repeat(DIAS)}<td class="total-geral">${formatarHora(somaGeral)}</td>`;
+    tfoot.appendChild(tr);
+    validarStreaks();
+    atualizarTotaisBotoesDias();
+}
+
+function totalHorasDia(diaIndex) {
+    let soma = 0;
+    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
+        const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
+        if (inp) soma += parseHora(inp.value);
+    });
+    return soma;
+}
+
+function atualizarTotaisBotoesDias() {
+    const btns = document.querySelectorAll('.btn-dia');
+    btns.forEach((btn, i) => {
+        const total = totalHorasDia(i);
+        const labelEl = btn.querySelector('.dia-total');
+        if (labelEl) labelEl.textContent = total > 0 ? formatarHora(total) + 'h' : '';
+        btn.classList.toggle('tem-dados', total > 0);
+    });
+}
+
+function sairEdicaoDia() {
+    if (diaEditandoIndex !== null) {
+        diaEditandoIndex = null;
+        document.querySelectorAll('.input-hora').forEach(inp => inp.disabled = true);
+        document.getElementById('badgeDiaEdicao').classList.remove('visivel');
+        document.getElementById('btnSairDia').style.display = 'none';
+        document.querySelectorAll('.btn-dia').forEach(btn => btn.classList.remove('dia-editando'));
+        limparDestaqueColuna();
+    }
+}
+
+function ativarEdicaoDia(diaIndex) {
+    if (diaEditandoIndex !== null && diaEditandoIndex !== diaIndex) sairEdicaoDia();
+    diaEditandoIndex = diaIndex;
+    document.querySelectorAll('.input-hora').forEach(inp => inp.disabled = true);
+    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
+        const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
+        if (inp) inp.disabled = false;
+    });
+    destacarColuna(diaIndex);
+    const diaNum = String(diaIndex + 1).padStart(2, '0');
+    document.getElementById('badgeDiaEdicao').textContent = `✏️ EDITANDO DIA ${diaNum}`;
+    document.getElementById('badgeDiaEdicao').classList.add('visivel');
+    document.getElementById('btnSairDia').style.display = 'inline-block';
+    document.querySelectorAll('.btn-dia').forEach((btn, i) => btn.classList.toggle('dia-editando', i === diaIndex));
+}
+
+function destacarColuna(diaIndex) {
+    limparDestaqueColuna();
+    const colIdx = diaIndex + 1;
+    const ths = document.querySelectorAll('#tableHeader tr th');
+    if (ths[colIdx]) ths[colIdx].classList.add('col-ativa');
+    document.querySelectorAll('#tabelaHoras tbody tr').forEach(row => {
+        if (row.cells[colIdx]) row.cells[colIdx].classList.add('col-ativa');
+    });
+}
+
+function limparDestaqueColuna() { document.querySelectorAll('.col-ativa').forEach(el => el.classList.remove('col-ativa')); }
+
+function mostrarComparativoDia(diaIndex) {
+    const diaNumero = diaIndex + 1;
+    const dadosDia = {};
+    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
+        const nome = row.cells[0].innerText.trim();
+        const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
+        dadosDia[nome] = inp ? parseHora(inp.value) : 0;
+    });
+    const gruposMap = {};
+    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
+        const nome = row.cells[0].innerText.trim();
+        let grupo = "CESSNA 206/210";
+        if (["Cleiton","João","Páscoal","Lindomar","Perisson","Rui","Yago"].includes(nome)) grupo = "CARAVAN";
+        else if (["Cauê","Felipe","Ruben","Ernesto","Daniela","Thales","Serafim","Ronaldo","Rodrigo","Thiago"].includes(nome)) grupo = "COPILOTO";
+        if (!gruposMap[grupo]) gruposMap[grupo] = [];
+        gruposMap[grupo].push({ nome, horas: dadosDia[nome] || 0 });
+    });
+    let html = `<div class="card-detalhe"><h2>📅 Dia ${String(diaNumero).padStart(2,'0')}</h2>`;
+    for (let grupo in gruposMap) {
+        let lista = gruposMap[grupo].sort((a,b)=>b.horas - a.horas);
+        const media = lista.reduce((s,p)=>s+p.horas,0)/lista.length;
+        html += `<h3>${grupo}</h3><p>Média: ${formatarHora(media)} h</p><table class="tabela-detalhe">`;
+        lista.forEach(p => {
+            const diff = p.horas - media;
+            html += `<tr><td>${p.nome}</td><td>${formatarHora(p.horas)}</td><td style="color:${diff>=0?'green':'red'}">${diff>=0?'+':''}${formatarHora(diff)}</td></tr>`;
+        });
+        html += `</table><hr>`;
+    }
+    html += `<button class="btn-fechar" id="fecharDetalhe">Fechar</button></div>`;
+    const modal = document.createElement('div'); modal.className = 'modal-detalhe'; modal.innerHTML = html;
+    document.body.appendChild(modal);
+    modal.querySelector('#fecharDetalhe').onclick = () => modal.remove();
+    modal.onclick = e => { if (e.target === modal) modal.remove(); };
+}
+
+async function mostrarDisponiveis() {
+    if (diaReferencia === null) { alert("Selecione um dia de referência clicando em um dos botões."); return; }
+    let diaSeguinte = diaReferencia + 1;
+    if (diaSeguinte >= DIAS) { alert("Último dia do mês. Não há dia seguinte para consulta."); return; }
+    try {
+        const res = await fetch(`/api/available_commanders/${diaSeguinte}`);
+        const data = await res.json();
+        let html = `<div class="card-detalhe"><h2>👥 Cmtes Disponíveis - Dia ${String(diaSeguinte+1).padStart(2,'0')}</h2>`;
+        for (let grupo in data) {
+            if (data[grupo].length > 0) {
+                html += `<h3>${grupo}</h3><ul>`;
+                data[grupo].forEach(c => html += `<li>${c.name} (${c.status})</li>`);
+                html += `</ul>`;
+            } else {
+                html += `<h3>${grupo}</h3><p>Nenhum piloto disponível.</p>`;
+            }
+        }
+        html += `<button class="btn-fechar" id="fecharDisponiveis">Fechar</button></div>`;
+        const modal = document.createElement('div'); modal.className = 'modal-detalhe'; modal.innerHTML = html;
+        document.body.appendChild(modal);
+        modal.querySelector('#fecharDisponiveis').onclick = () => modal.remove();
+        modal.onclick = e => { if (e.target === modal) modal.remove(); };
+    } catch(e) { alert("Erro ao carregar disponíveis"); }
+}
+
+async function carregarDoBackend() {
+    try {
+        const res = await fetch('/api/data');
+        const data = await res.json();
+        const pilots = data.pilots;
+        const logs = data.logs;
+        
+        const thead = document.getElementById('tableHeader');
+        thead.innerHTML = `<tr><th>👤 PILOTO</th>${Array.from({length:DIAS},(_,i)=>`<th>${String(i+1).padStart(2,'0')}</th>`).join('')}<th>⭐ TOTAL</th></tr>`;
+        
+        const tbody = document.getElementById('planilhaBody');
+        tbody.innerHTML = '';
+        
+        const grupos = { "CESSNA 206/210": [], "CARAVAN": [], "COPILOTO": [] };
+        pilots.forEach(p => grupos[p.group].push(p));
+        
+        for (let grupo of ["CESSNA 206/210", "CARAVAN", "COPILOTO"]) {
+            const titleRow = document.createElement('tr');
+            titleRow.classList.add('group-title-row');
+            titleRow.innerHTML = `<td colspan="${DIAS+2}"><i class="fas fa-${grupo === "COPILOTO" ? "headset" : "plane"}"></i> ${grupo}</td>`;
+            tbody.appendChild(titleRow);
+            
+            for (let p of grupos[grupo]) {
+                const row = document.createElement('tr');
+                row.classList.add('membro-row');
+                const nomeCell = document.createElement('td');
+                nomeCell.textContent = p.name;
+                row.appendChild(nomeCell);
+                let total = 0;
+                for (let i = 0; i < DIAS; i++) {
+                    const td = document.createElement('td');
+                    const inp = document.createElement('input');
+                    inp.type = 'text';
+                    inp.classList.add('input-hora');
+                    inp.placeholder = '0,0';
+                    const valor = logs[p.name]?.[i+1] || 0;
+                    inp.value = formatarHora(valor);
+                    total += valor;
+                    inp.addEventListener('input', function() { if (diaEditandoIndex !== null || isEditing) { atualizarTotalLinha(row); recalcularTudo(); if(isEditing) salvarNoBackend(); } });
+                    inp.addEventListener('blur', function() { if (diaEditandoIndex !== null || isEditing) { let v = parseHora(this.value); this.value = formatarHora(v); atualizarTotalLinha(row); [...]
+                    td.appendChild(inp);
+                    row.appendChild(td);
+                }
+                const totalCell = document.createElement('td');
+                totalCell.classList.add('total-cell');
+                totalCell.textContent = formatarHora(total);
+                row.appendChild(totalCell);
+                tbody.appendChild(row);
+            }
+        }
+        recalcularTudo();
+        criarBotoesDias();
+        sairEdicaoDia();
+    } catch(e) { console.error(e); }
+}
+
+async function salvarNoBackend() {
+    if (!isEditing || !password) return;
+    const logs = {};
+    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
+        const nome = row.cells[0].innerText.trim();
+        logs[nome] = {};
+        row.querySelectorAll('.input-hora').forEach((inp, i) => {
+            const val = parseHora(inp.value);
+            if (val > 0) logs[nome][i+1] = val;
+        });
+    });
+    try {
+        await fetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password, logs }) });
+        document.getElementById('syncStatus').innerHTML = '✅ Salvo';
+        setTimeout(() => document.getElementById('syncStatus').innerHTML = '💾 Sincronizado', 2000);
+    } catch(e) { document.getElementById('syncStatus').innerHTML = '❌ Erro ao salvar'; }
+}
+
+function criarBotoesDias() {
+    const container = document.getElementById('botoesDias');
+    container.innerHTML = '';
+    for (let i = 0; i < DIAS; i++) {
+        const btn = document.createElement('button');
+        btn.classList.add('btn-dia');
+        btn.innerHTML = `<span class="dia-num">${String(i+1).padStart(2,'00')}</span><span class="dia-total"></span>`;
+        btn.onclick = () => {
+            if (diaReferencia !== null) {
+                const btnAntigo = document.querySelector(`.btn-dia[data-dia="${diaReferencia}"]`);
+                if (btnAntigo) btnAntigo.classList.remove('dia-selecionado');
+            }
+            diaReferencia = i;
+            btn.classList.add('dia-selecionado');
+            btn.setAttribute('data-dia', i);
+            if (isEditing) {
+                ativarEdicaoDia(i);
+            } else {
+                mostrarComparativoDia(i);
+            }
+        };
+        container.appendChild(btn);
+    }
+    atualizarTotaisBotoesDias();
+}
+
+async function login() {
+    const p = prompt("Digite a senha:");
+    try {
+        const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: p }) });
+        if (res.ok) {
+            password = p;
+            isEditing = true;
+            document.getElementById('statusBadge').innerHTML = '🔓 EDIÇÃO ATIVA';
+            document.getElementById('editModeChip').innerHTML = '✏️ EDIÇÃO ATIVO';
+            document.getElementById('btnLimpar').disabled = false;
+            document.getElementById('btnBloquear').disabled = false;
+            alert("✅ Modo edição ativado. Clique em um dia para editar apenas aquela coluna.");
+        } else { alert("❌ Senha incorreta."); }
+    } catch(e) { alert("Erro de conexão"); }
+}
+
+function bloquear() {
+    if (!isEditing) alert("Já está em modo leitura.");
+    else {
+        isEditing = false;
+        password = "";
+        sairEdicaoDia();
+        document.querySelectorAll('.input-hora').forEach(inp => inp.disabled = true);
+        document.getElementById('statusBadge').innerHTML = '🔒 SOMENTE LEITURA';
+        document.getElementById('editModeChip').innerHTML = '📖 MODO VISUALIZAÇÃO';
+        document.getElementById('btnLimpar').disabled = true;
+        document.getElementById('btnBloquear').disabled = true;
+        alert("Modo leitura ativado.");
+    }
+}
+
+function limpar() {
+    if (!isEditing) return alert("Desbloqueie primeiro.");
+    if (confirm("Limpar todos os valores?")) {
+        document.querySelectorAll('.input-hora').forEach(inp => inp.value = '0,0');
+        recalcularTudo();
+        salvarNoBackend();
+    }
+}
+
+document.getElementById('btnDesbloquear').onclick = login;
+document.getElementById('btnBloquear').onclick = bloquear;
+document.getElementById('btnLimpar').onclick = limpar;
+document.getElementById('btnSairDia').onclick = sairEdicaoDia;
+document.getElementById('btnDisponiveis').onclick = mostrarDisponiveis;
+
+carregarDoBackend();
+</script>
+</body>
+</html>
