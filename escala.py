@@ -41,7 +41,7 @@ ESCALA_MENSAL = {
     "Ernesto": ["FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO"],
     "Ruben": ["FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO"],
     "Rodrigo": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO"],
-    "Ronalldo": ["SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
+    "Ronaldo": ["SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
     "Thales": ["SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
     "Serafim": ["SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","SO","FR","SO","SO"],
     "Tiago": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"]
