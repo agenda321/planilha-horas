@@ -1,4 +1,4 @@
-# escala.py - Dados da escala mensal (30 dias)
+# escala.py - Dados da escala mensal (30 dias) - ATUALIZADO
 # Códigos: VO (vazio/disponível), CQ, RE, SO (disponíveis)
 # Indisponíveis: DM, CM, EA, FR, FS, FE, TR, TN
 
@@ -9,13 +9,13 @@ ESCALA_MENSAL = {
     "Cleiton": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR"],
     "Cleverson": ["SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
     "Edson": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","FR","SO"],
-    "Frank": ["FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO"],
+    "Franker": ["FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO"],
     "Gabriel": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO"],
     "Costa": ["SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
     "Hazafe": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR"],
     "Amarildo": ["SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
     "Igorh": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO"],
-    "Joao": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO"],
+    "JOAO": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO"],
     "Deyvid": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR"],
     "Lindomar": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
     "Lucas": ["FR","FR","FR","FR","FS","FS","FS","RE","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO","SO"],
@@ -34,14 +34,14 @@ ESCALA_MENSAL = {
     "Vitor": ["FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
     "Bento": ["FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
     "Wellber": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO"],
-    "Andrade": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO"],
+    "Andrade": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO"],
     "Yago": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO"],
     "Cauê": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO"],
     "Daniela": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO"],
     "Ernesto": ["FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO"],
     "Ruben": ["FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO"],
     "Rodrigo": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO"],
-    "Ronaldo": ["SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
+    "RONALLDO": ["SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
     "Thales": ["SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
     "Serafim": ["SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","SO","FR","SO","SO"],
     "Tiago": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"]
