@@ -9,7 +9,7 @@ ESCALA_MENSAL = {
     "Cleiton": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR"],
     "Cleverson": ["SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
     "Edson": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","FR","SO"],
-    "Franker": ["FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO"],
+    FR, SO, SO, SO, FR, SO, SO, FR, SO, SO, SO, FS, FS, FS, RE, SO, SO, SO, FR, SO, SO, SO, SO, SO, FR, SO, SO, SO, SO, SO
     "Gabriel": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO"],
     "Costa": ["SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
     "Hazafe": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR"],
