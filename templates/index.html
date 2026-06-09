@@ -352,10 +352,10 @@ function mostrarComparativoDia(diaIndex) {
     for (let grupo in gruposMap) {
         let lista = gruposMap[grupo].sort((a,b)=>b.horas - a.horas);
         const media = lista.reduce((s,p)=>s+p.horas,0)/lista.length;
-        html += `<h3>${grupo}</h3><p>Média: ${formatarHora(media)} h</p><table class="tabela-detalhe"><tr><th>Piloto</th><th>Horas</th><th>vs Média</th></tr>`;
+        html += `<h3>${grupo}</h3><p>Média: ${formatarHora(media)} h</p><table class="tabela-detalhe">`;
         lista.forEach(p => {
             const diff = p.horas - media;
-            html += `<tr><td>${p.nome}</td><td>${formatarHora(p.horas)}</td><td style="color:${diff>=0?'green':'red'}">${diff>=0?'+':''}${formatarHora(diff)}</td></tr>`;
+            html += `<tr><td style="text-align:left">${p.nome}</td><td>${formatarHora(p.horas)}</td><td style="color:${diff>=0?'green':'red'}">${diff>=0?'+':''}${formatarHora(diff)}</td></tr>`;
         });
         html += `</table><hr>`;
     }
@@ -554,4 +554,4 @@ document.getElementById('btnDisponiveis').onclick = mostrarDisponiveis;
 carregarDoBackend();
 </script>
 </body>
-</html>
+    </html>
