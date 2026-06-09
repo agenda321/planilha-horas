@@ -15,7 +15,7 @@ ESCALA_MENSAL = {
     "Hazafe": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR"],
     "Amarildo": ["SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
     "Igorh": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO"],
-    "JOAO": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO"],
+    "João": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO"],
     "Deyvid": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR"],
     "Lindomar": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
     "Lucas": ["FR","FR","FR","FR","FS","FS","FS","RE","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO","SO"],
