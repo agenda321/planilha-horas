@@ -168,7 +168,7 @@
             display: flex; align-items: center; justify-content: center; z-index: 2000;
         }
         .card-senha, .card-detalhe {
-            background: #fdf5e6; border-radius: 48px; width: 90%; max-width: 400px;
+            background: #fdf5e6; border-radius: 48px; width: 90%; max-width: 550px;
             padding: 24px; box-shadow: 0 20px 35px black; max-height: 85vh; overflow-y: auto;
         }
         .card-senha { text-align: center; max-width: 350px; }
@@ -182,8 +182,40 @@
             background: #a07143; color: white; border: none;
             padding: 8px 22px; border-radius: 60px; cursor: pointer;
         }
-        .tabela-detalhe { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .tabela-detalhe th, .tabela-detalhe td { border: 1px solid #ccb28b; padding: 8px; text-align: left; }
+        .tabela-detalhe {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .tabela-detalhe th, .tabela-detalhe td {
+            border: 1px solid #ccb28b;
+            padding: 8px;
+            text-align: left;
+        }
+        .tabela-detalhe th {
+            background: #e8d5b0;
+            font-weight: bold;
+        }
+        .progress-bar-wrap {
+            background: #e0cfa8;
+            border-radius: 10px;
+            height: 12px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .barra-progresso {
+            background: #ddd;
+            border-radius: 10px;
+            height: 12px;
+            width: 100%;
+        }
+        .barra-fill {
+            background: #e67e22;
+            height: 100%;
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
         .btn-fechar {
             background: #b07842; border: none; padding: 10px 28px;
             border-radius: 60px; color: white; margin-top: 20px; cursor: pointer;
@@ -194,8 +226,6 @@
             font-size: 0.75rem; font-weight: bold; color: #3b2a00; display: none;
         }
         .badge-dia-edicao.visivel { display: inline-block; }
-        .progress-bar-wrap { background: #e0cfa8; border-radius: 20px; height: 10px; width: 100%; margin-top: 4px; }
-        .progress-bar-fill { height: 10px; border-radius: 20px; background: linear-gradient(to right, #e6a800, #a07000); }
         .toast {
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
             background: #3b2a1f; color: #ffe1a0; padding: 10px 24px;
@@ -271,6 +301,7 @@ function showToast(msg, duracao = 2500) {
     toast._timer = setTimeout(() => toast.classList.remove('show'), duracao);
 }
 
+// ======================== ESCALA MENSAL ========================
 const ESCALA_MENSAL = {
     "Adelio": ["FE","FE","FE","FE","FE","FE","FE","FE","SO","SO","SO","FS","FS","FS","RE","SO","FR","SO","SO","FR","SO","SO","FR","SO","SO","FR","SO","SO","SO","FR"],
     "Otto": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO"],
@@ -317,6 +348,12 @@ const ESCALA_MENSAL = {
     "Leandro": ["SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
     "Dany": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR"],
     "Felipe": ["SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"]
+};
+
+// Mapeamento de nomes (front-end -> back-end para escala)
+const MAPEAMENTO_NOMES = {
+    "Dayvid": "Dayvid",   // já está correto
+    "Mathias": "Mathias"  // já está correto
 };
 
 const GRUPOS_PILOTO = {
@@ -371,7 +408,10 @@ function isStatusBloqueado(status) {
     return ["DM","CM","EA","FR","FS","FE","TR","TN","CQ","RE"].includes(status);
 }
 
-function getNomeFromRow(row) { return row.cells[0].innerText.trim(); }
+function getNomeFromRow(row) { 
+    return row.cells[0].innerText.trim();
+}
+
 function getColIndex(inp) {
     return Array.from(inp.parentNode.parentNode.children).indexOf(inp.parentNode) - 1;
 }
@@ -560,47 +600,68 @@ function limparDestaqueColuna() {
     document.querySelectorAll('.col-ativa').forEach(el => el.classList.remove('col-ativa'));
 }
 
+// ======================== MODAL COMPARATIVO CORRIGIDO ========================
 function mostrarComparativoDia(diaIndex) {
-    const diaNumero = diaIndex+1;
-    const gruposMap = { "CESSNA 206/210":[], "CARAVAN":[], "COPILOTO":[] };
+    const diaNumero = diaIndex + 1;
+    const dadosDia = {};
     const escalaDinamica = calcularEscalaComFolgasDeslocadas();
-
+    
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const nome = getNomeFromRow(row);
         const status = escalaDinamica[nome]?.[diaIndex];
         let horas = 0;
         if (!isStatusBloqueado(status)) {
-            const inp = row.cells[diaIndex+1]?.querySelector('.input-hora');
+            const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
             if (inp) horas = parseHora(inp.value);
         }
-        gruposMap[getGrupo(nome)].push({ nome, horas, status });
+        dadosDia[nome] = horas;
     });
-    const maxHoras = Math.max(...Object.values(gruposMap).flat().map(p=>p.horas), 0.1);
-    let html = `<div class="card-detalhe"><h2>📅 Dia ${String(diaNumero).padStart(2,'0')}</h2>`;
+    
+    const gruposMap = { "CESSNA 206/210": [], "CARAVAN": [], "COPILOTO": [] };
+    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
+        const nome = getNomeFromRow(row);
+        const grupo = getGrupo(nome);
+        gruposMap[grupo].push({ nome, horas: dadosDia[nome] || 0 });
+    });
+    
+    let html = `<div class="card-detalhe"><h2>📅 Dia ${String(diaNumero).padStart(2, '0')}</h2>`;
+    
     for (let grupo in gruposMap) {
-        const lista = gruposMap[grupo].sort((a,b) => b.horas-a.horas);
-        if (!lista.length) continue;
-        const media = lista.reduce((s,p)=>s+p.horas,0)/lista.length;
-        html += `<h3>${grupo}</h3><p style="font-size:0.85rem;color:#7a5000">Média: ${formatarHora(media)} h</p><table class="tabela-detalhe">`;
+        let lista = gruposMap[grupo].sort((a, b) => b.horas - a.horas);
+        if (lista.length === 0) continue;
+        const media = lista.reduce((s, p) => s + p.horas, 0) / lista.length;
+        const maxHoras = Math.max(...lista.map(p => p.horas), 0.1);
+        
+        html += `<h3 style="margin-top: 20px;">✈️ ${grupo}</h3>`;
+        html += `<p>📊 Média do grupo: <strong>${formatarHora(media)} h</strong></p>`;
+        html += `<div style="overflow-x: auto;"><table class="tabela-detalhe" style="width: 100%;">`;
+        html += `<thead><tr><th style="text-align: left;">Piloto</th><th style="text-align: center;">Horas</th><th style="text-align: center;">vs Média</th><th style="text-align: center;">Comparativo</th></thead><tbody>`;
+        
         lista.forEach(p => {
-            const diff = p.horas-media;
-            const pct = Math.round((p.horas/maxHoras)*100);
+            const diff = p.horas - media;
+            const perc = maxHoras > 0 ? (p.horas / maxHoras) * 100 : 0;
+            const diffText = diff >= 0 ? `+${formatarHora(diff)}` : `${formatarHora(diff)}`;
+            const diffColor = diff >= 0 ? '#2a8a2a' : '#cc2222';
+            
             html += `<tr>
-                <td style="text-align:left;min-width:100px">${p.nome}</td>
-                <td style="min-width:80px"><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div></td>
-                <td style="color:${p.horas===0?'#aaa':'#000'}">${p.horas===0?p.status||'—':formatarHora(p.horas)}</td>
-                <td style="color:${diff>=0?'green':'red'}">${diff>=0?'+':''}${formatarHora(diff)}<\/td>
-            </table>`;
+                <td style="text-align: left; font-weight: 500;">${p.nome}</td>
+                <td style="text-align: center; font-weight: bold;">${p.horas === 0 ? '—' : formatarHora(p.horas)}</strong></td>
+                <td style="text-align: center; color: ${diffColor}; font-weight: bold;">${diffText}</td>
+                <td style="min-width: 120px;"><div class="progress-bar-wrap"><div class="barra-fill" style="width: ${perc}%;"></div></div></td>
+            </tr>`;
         });
-        html += `<\/table><hr>`;
+        
+        html += `</tbody>}</div><hr style="margin: 20px 0; border-color: #ccb28b;">`;
     }
-    html += `<button class="btn-fechar" id="fecharDetalhe">Fechar</button><\/div>`;
+    
+    html += `<button class="btn-fechar" id="fecharDetalhe">Fechar</button></div>`;
+    
     const modal = document.createElement('div');
     modal.className = 'modal-detalhe';
     modal.innerHTML = html;
     document.body.appendChild(modal);
     modal.querySelector('#fecharDetalhe').onclick = () => modal.remove();
-    modal.onclick = e => { if (e.target===modal) modal.remove(); };
+    modal.onclick = e => { if (e.target === modal) modal.remove(); };
 }
 
 async function mostrarDisponiveis(diaRef) {
@@ -621,7 +682,7 @@ async function mostrarDisponiveis(diaRef) {
                 html += `<p>Nenhum piloto disponível.</p>`;
             }
         }
-        html += `<button class="btn-fechar" id="fecharDisponiveis">Fechar</button><\/div>`;
+        html += `<button class="btn-fechar" id="fecharDisponiveis">Fechar</button></div>`;
         const modal = document.createElement('div');
         modal.className = 'modal-detalhe';
         modal.innerHTML = html;
@@ -644,7 +705,7 @@ async function carregarDoBackend() {
         atualizarDias();
 
         const thead = document.getElementById('tableHeader');
-        thead.innerHTML = `<td><th>👤 PILOTO</th>${Array.from({length:DIAS},(_,i)=>`<th>${String(i+1).padStart(2,'00')}</th>`).join('')}<th>⭐ TOTAL</th>`;
+        thead.innerHTML = `<tr><th>👤 PILOTO</th>${Array.from({length:DIAS},(_,i)=>`<th>${String(i+1).padStart(2,'00')}</th>`).join('')}<th>⭐ TOTAL</th>`;
 
         const tbody = document.getElementById('planilhaBody');
         tbody.innerHTML = '';
