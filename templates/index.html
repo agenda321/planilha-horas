@@ -119,24 +119,34 @@
         .planilha th:first-child { position: sticky; left: 0; z-index: 15; background: #9c7a50; }
         .planilha th.col-ativa { background: linear-gradient(to bottom, #e6a800, #a07000) !important; }
         .planilha td.col-ativa { background: #fffacc !important; }
+        
+        /* Estilo dos inputs */
         .input-hora {
-            width: 70px; padding: 6px; text-align: center;
-            font-family: monospace; background: #f9f2e0;
-            border: 2px solid #c9aa77; border-radius: 16px; transition: all 0.2s;
+            width: 70px;
+            padding: 6px;
+            text-align: center;
+            font-family: monospace;
+            background: #f9f2e0;
+            border: 2px solid #c9aa77;
+            border-radius: 16px;
+            transition: all 0.2s;
         }
         .input-hora::placeholder { color: #aaa; font-style: italic; font-size: 0.7rem; }
         .input-hora.has-value { background: #fff1b5; border-color: #e4b149; box-shadow: 0 0 6px gold; }
         .input-hora.streak-day { background: #ffcc99; border-color: #e67300; }
-        
-        /* Cores para diferentes status (apenas visuais, não bloqueiam) */
-        .input-hora.status-dm, .input-hora.status-cm { background: #ffb366; border-color: #cc5200; color: #662200; font-weight: bold; }
-        .input-hora.status-vo, .input-hora.status-cq, .input-hora.status-tn { background: #99ccff; border-color: #0066cc; color: #003366; font-weight: bold; }
-        .input-hora.status-ea, .input-hora.status-tr { background: #ffff99; border-color: #cccc00; color: #666600; font-weight: bold; }
-        .input-hora.status-fr { background: #90ee90; border-color: #008000; color: #004d00; font-weight: bold; }
-        .input-hora.status-fs { background: #ff9999; border-color: #cc0000; color: #660000; font-weight: bold; }
-        .input-hora.status-fe { background: #ccffcc; border-color: #00cc00; color: #006600; font-weight: bold; }
-        .input-hora.status-re { background: #ffccff; border-color: #cc66cc; color: #660066; font-weight: bold; }
-        .input-hora.status-so { background: #ffffff; border-color: #999999; color: #333333; font-weight: bold; }
+
+        /* ========== SISTEMA DE CORES PERSONALIZÁVEL ========== */
+        /* Você pode alterar as cores abaixo conforme desejar */
+        .input-hora[data-status="DM"], .input-hora[data-status="CM"] { background: #ffb366; border-color: #cc5200; color: #662200; font-weight: bold; }
+        .input-hora[data-status="VO"], .input-hora[data-status="CQ"], .input-hora[data-status="TN"] { background: #99ccff; border-color: #0066cc; color: #003366; font-weight: bold; }
+        .input-hora[data-status="EA"], .input-hora[data-status="TR"] { background: #ffff99; border-color: #cccc00; color: #666600; font-weight: bold; }
+        .input-hora[data-status="FR"] { background: #90ee90; border-color: #008000; color: #004d00; font-weight: bold; }
+        .input-hora[data-status="FS"] { background: #ff9999; border-color: #cc0000; color: #660000; font-weight: bold; }
+        .input-hora[data-status="FE"] { background: #ccffcc; border-color: #00cc00; color: #006600; font-weight: bold; }
+        .input-hora[data-status="RE"] { background: #ffccff; border-color: #cc66cc; color: #660066; font-weight: bold; }
+        .input-hora[data-status="SO"] { background: #ffffff; border-color: #999999; color: #333333; font-weight: bold; }
+        /* Cor padrão para textos não reconhecidos */
+        .input-hora[data-status="default"] { background: #f9f2e0; border-color: #c9aa77; }
 
         .total-cell { background: #e7dbbc; font-weight: bold; }
         .group-title-row td {
@@ -171,7 +181,7 @@
             display: flex; align-items: center; justify-content: center; z-index: 2000;
         }
         .card-senha, .card-detalhe {
-            background: #fdf5e6; border-radius: 48px; width: 90%; max-width: 550px;
+            background: #fdf5e6; border-radius: 48px; width: 90%; max-width: 600px;
             padding: 24px; box-shadow: 0 20px 35px black; max-height: 85vh; overflow-y: auto;
         }
         .card-senha { text-align: center; max-width: 350px; }
@@ -192,12 +202,13 @@
         }
         .tabela-detalhe th, .tabela-detalhe td {
             border: 1px solid #ccb28b;
-            padding: 8px;
+            padding: 10px 8px;
             text-align: left;
         }
         .tabela-detalhe th {
             background: #e8d5b0;
             font-weight: bold;
+            text-align: center;
         }
         .progress-bar-wrap {
             background: #e0cfa8;
@@ -205,12 +216,6 @@
             height: 12px;
             width: 100%;
             overflow: hidden;
-        }
-        .barra-progresso {
-            background: #ddd;
-            border-radius: 10px;
-            height: 12px;
-            width: 100%;
         }
         .barra-fill {
             background: #e67e22;
@@ -282,7 +287,7 @@
                 <span class="legenda-item" style="background:#ccffcc;">FE = Verde Claro</span>
                 <span class="legenda-item" style="background:#ffccff;">RE = Rosa</span>
                 <span class="legenda-item" style="background:#ffffff;">SO = Branco</span>
-                <span><i class="fas fa-edit"></i> Edição total | Toque no dia → editar | Toque longo → disponíveis</span>
+                <span><i class="fas fa-edit"></i> Toque no dia → editar coluna | Toque longo → disponíveis</span>
             </div>
             <div class="status-chip" id="editModeChip">📖 MODO VISUALIZAÇÃO</div>
         </div>
@@ -304,7 +309,7 @@ function showToast(msg, duracao = 2500) {
     toast._timer = setTimeout(() => toast.classList.remove('show'), duracao);
 }
 
-// ======================== ESCALA MENSAL (APENAS PARA VISUALIZAÇÃO INICIAL) ========================
+// ======================== ESCALA MENSAL ========================
 const ESCALA_MENSAL = {
     "Adelio": ["FE","FE","FE","FE","FE","FE","FE","FE","SO","SO","SO","FS","FS","FS","RE","SO","FR","SO","SO","FR","SO","SO","FR","SO","SO","FR","SO","SO","SO","FR"],
     "Otto": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO"],
@@ -392,18 +397,13 @@ function parseHora(v) {
 }
 function formatarHora(n) { return n.toFixed(1).replace('.',','); }
 
-function getStatusClass(status) {
-    const map = {
-        "DM":"status-dm","CM":"status-cm","VO":"status-vo","EA":"status-ea",
-        "FR":"status-fr","FS":"status-fs","FE":"status-fe","RE":"status-re",
-        "SO":"status-so","TR":"status-tr","TN":"status-tn","CQ":"status-cq"
+function getStatusFromValue(value) {
+    const statusMap = {
+        "DM": "DM", "CM": "CM", "VO": "VO", "CQ": "CQ", "TN": "TN",
+        "EA": "EA", "TR": "TR", "FR": "FR", "FS": "FS", "FE": "FE",
+        "RE": "RE", "SO": "SO"
     };
-    return map[status] || "";
-}
-
-function isStatusBloqueado(status) {
-    // OPÇÃO C: Nenhum status é bloqueado - tudo editável
-    return false;
+    return statusMap[value] || null;
 }
 
 function getNomeFromRow(row) { 
@@ -414,36 +414,18 @@ function getColIndex(inp) {
     return Array.from(inp.parentNode.parentNode.children).indexOf(inp.parentNode) - 1;
 }
 
-function calcularEscalaComFolgasDeslocadas() {
-    let escalaTemporaria = JSON.parse(JSON.stringify(ESCALA_MENSAL));
-    return escalaTemporaria;
-}
-
-function atualizarClassesEBloqueiosCelulas() {
-    const escalaDinamica = calcularEscalaComFolgasDeslocadas();
-
-    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const nome = getNomeFromRow(row);
-        row.querySelectorAll('.input-hora').forEach((inp, i) => {
-            const statusAtualizado = escalaDinamica[nome]?.[i] || "";
-
-            inp.classList.remove(
-                "status-dm","status-cm","status-vo","status-ea","status-fr",
-                "status-fs","status-fe","status-re","status-so","status-tr","status-tn","status-cq"
-            );
-
-            if (statusAtualizado) {
-                inp.classList.add(getStatusClass(statusAtualizado));
-            }
-
-            // OPÇÃO C: Todas as células ficam editáveis quando o dia está selecionado
-            if (isEditing && (diaEditandoIndex === null || diaEditandoIndex === i)) {
-                inp.disabled = false;
-            } else {
-                inp.disabled = true;
-            }
-        });
-    });
+function atualizarCorInput(inp) {
+    const valor = inp.value.trim();
+    const status = getStatusFromValue(valor);
+    if (status) {
+        inp.setAttribute('data-status', status);
+    } else if (valor !== "" && parseHora(valor) > 0) {
+        inp.setAttribute('data-status', '');
+        inp.classList.add('has-value');
+    } else {
+        inp.setAttribute('data-status', 'default');
+        inp.classList.remove('has-value');
+    }
 }
 
 function atualizarTotalLinha(row) {
@@ -451,7 +433,7 @@ function atualizarTotalLinha(row) {
     row.querySelectorAll('.input-hora').forEach((inp) => {
         let val = parseHora(inp.value);
         if (!isNaN(val) && val > 0) soma += val;
-        inp.classList.toggle('has-value', val > 0);
+        atualizarCorInput(inp);
     });
     const totalCell = row.querySelector('.total-cell');
     if (totalCell) totalCell.textContent = formatarHora(soma);
@@ -481,7 +463,6 @@ function validarStreaks() {
 }
 
 function recalcularTudo() {
-    atualizarClassesEBloqueiosCelulas();
     let somaGeral = 0;
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => somaGeral += atualizarTotalLinha(row));
     const tfoot = document.getElementById('tfootTotal');
@@ -529,8 +510,12 @@ function ativarEdicaoDia(diaIndex) {
     if (diaEditandoIndex !== null && diaEditandoIndex !== diaIndex) sairEdicaoDia();
     diaEditandoIndex = diaIndex;
     
-    recalcularTudo();
-
+    // Torna toda a coluna editável
+    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
+        const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
+        if (inp) inp.disabled = false;
+    });
+    
     destacarColuna(diaIndex);
     const th = document.querySelector(`#tableHeader th:nth-child(${diaIndex+2})`);
     if (th) th.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
@@ -539,6 +524,8 @@ function ativarEdicaoDia(diaIndex) {
     document.getElementById('badgeDiaEdicao').classList.add('visivel');
     document.getElementById('btnSairDia').style.display = 'inline-block';
     document.querySelectorAll('.btn-dia').forEach((btn,i) => btn.classList.toggle('dia-editando', i===diaIndex));
+    
+    showToast(`✏️ Dia ${diaNum} liberado para edição`);
 }
 
 function destacarColuna(diaIndex) {
@@ -575,7 +562,7 @@ function mostrarComparativoDia(diaIndex) {
         gruposMap[grupo].push({ nome, horas: dadosDia[nome] || 0 });
     });
     
-    let html = `<div class="card-detalhe"><h2>📅 Dia ${String(diaNumero).padStart(2, '0')}</h2>`;
+    let html = `<div class="card-detalhe"><h2 style="text-align:center; margin-bottom:20px;">📅 Dia ${String(diaNumero).padStart(2, '0')}</h2>`;
     
     for (let grupo in gruposMap) {
         let lista = gruposMap[grupo].sort((a, b) => b.horas - a.horas);
@@ -583,10 +570,11 @@ function mostrarComparativoDia(diaIndex) {
         const media = lista.reduce((s, p) => s + p.horas, 0) / lista.length;
         const maxHoras = Math.max(...lista.map(p => p.horas), 0.1);
         
-        html += `<h3 style="margin-top: 20px;">✈️ ${grupo}</h3>`;
-        html += `<p>📊 Média do grupo: <strong>${formatarHora(media)} h</strong></p>`;
+        html += `<div style="margin-bottom: 25px;">`;
+        html += `<h3 style="margin: 0 0 10px 0; color: #7a4a1e;">✈️ ${grupo}</h3>`;
+        html += `<p style="margin: 0 0 10px 0; font-size: 0.9rem;">📊 Média do grupo: <strong>${formatarHora(media)} h</strong></p>`;
         html += `<div style="overflow-x: auto;"><table class="tabela-detalhe" style="width: 100%;">`;
-        html += `<thead><tr><th style="text-align: left;">Piloto</th><th style="text-align: center;">Horas</th><th style="text-align: center;">vs Média</th><th style="text-align: center;">Comparativo</th></thead><tbody>`;
+        html += `<thead><tr><th style="text-align: left;">Piloto</th><th style="text-align: center; width: 80px;">Horas</th><th style="text-align: center; width: 80px;">vs Média</th><th style="text-align: center;">Comparativo</th></thead><tbody>`;
         
         lista.forEach(p => {
             const diff = p.horas - media;
@@ -599,10 +587,10 @@ function mostrarComparativoDia(diaIndex) {
                 <td style="text-align: center; font-weight: bold;">${p.horas === 0 ? '—' : formatarHora(p.horas)}</strong></td>
                 <td style="text-align: center; color: ${diffColor}; font-weight: bold;">${diffText}</td>
                 <td style="min-width: 120px;"><div class="progress-bar-wrap"><div class="barra-fill" style="width: ${perc}%;"></div></div></td>
-            </tr>`;
+            </td>`;
         });
         
-        html += `</tbody>}</div><hr style="margin: 20px 0; border-color: #ccb28b;">`;
+        html += `</tbody>}</div></div><hr style="margin: 20px 0; border-color: #ccb28b;">`;
     }
     
     html += `<button class="btn-fechar" id="fecharDetalhe">Fechar</button></div>`;
@@ -622,11 +610,11 @@ async function mostrarDisponiveis(diaRef) {
     try {
         const res = await fetch(`/api/available_commanders/${diaSeguinte}`);
         const data = await res.json();
-        let html = `<div class="card-detalhe"><h2>👥 Cmtes Disponíveis - Dia ${String(diaSeguinte+1).padStart(2,'00')}</h2>`;
+        let html = `<div class="card-detalhe"><h2 style="text-align:center;">👥 Cmtes Disponíveis - Dia ${String(diaSeguinte+1).padStart(2,'00')}</h2>`;
         for (let grupo in data) {
-            html += `<h3>${grupo}</h3>`;
+            html += `<h3 style="margin-top: 15px;">${grupo}</h3>`;
             if (data[grupo].length > 0) {
-                html += `<ul>`;
+                html += `<ul style="margin: 5px 0 15px 20px;">`;
                 data[grupo].forEach(c => html += `<li>${c.name} (${c.status})</li>`);
                 html += `</ul>`;
             } else {
@@ -698,22 +686,24 @@ async function carregarDoBackend() {
                             inp.value = "";
                         }
                     }
+                    
+                    // Aplica a cor baseada no valor inicial
+                    atualizarCorInput(inp);
 
                     inp.addEventListener('input', function() {
-                        if ((diaEditandoIndex !== null || isEditing) && !this.disabled) {
+                        if (diaEditandoIndex !== null || isEditing) {
                             atualizarTotalLinha(row);
                             recalcularTudo();
                             if (isEditing && password) salvarNoBackend();
                         }
                     });
                     inp.addEventListener('blur', function() {
-                        if ((diaEditandoIndex !== null || isEditing) && !this.disabled) {
+                        if (diaEditandoIndex !== null || isEditing) {
                             let v = parseHora(this.value);
                             if (v > 0) {
                                 this.value = formatarHora(v);
-                            } else {
-                                // Mantém o texto digitado (pode ser FR, SO, etc.)
                             }
+                            atualizarCorInput(this);
                             atualizarTotalLinha(row);
                             recalcularTudo();
                             if (isEditing && password) salvarNoBackend();
@@ -729,6 +719,10 @@ async function carregarDoBackend() {
                 tbody.appendChild(row);
             }
         }
+        
+        // Inicialmente desabilita todos os inputs
+        document.querySelectorAll('.input-hora').forEach(inp => inp.disabled = true);
+        
         recalcularTudo();
         criarBotoesDias();
         sairEdicaoDia();
@@ -834,8 +828,7 @@ async function login() {
         document.getElementById('editModeChip').innerHTML = '✏️ EDIÇÃO ATIVO';
         document.getElementById('btnLimpar').disabled = false;
         document.getElementById('btnBloquear').disabled = false;
-        recalcularTudo();
-        showToast("✅ Edição ativada! Toque num dia para editar qualquer célula.");
+        showToast("✅ Edição ativada! Toque num dia para editar a coluna.");
     } else if (senha !== null) {
         showToast("❌ Senha incorreta.");
     }
@@ -846,11 +839,12 @@ function bloquear() {
     isEditing = false;
     password = "";
     sairEdicaoDia();
+    // Desabilita todos os inputs
+    document.querySelectorAll('.input-hora').forEach(inp => inp.disabled = true);
     document.getElementById('statusBadge').innerHTML = '🔒 SOMENTE LEITURA';
     document.getElementById('editModeChip').innerHTML = '📖 MODO VISUALIZAÇÃO';
     document.getElementById('btnLimpar').disabled = true;
     document.getElementById('btnBloquear').disabled = true;
-    recalcularTudo();
     showToast("🔒 Modo leitura ativado.");
 }
 
@@ -874,4 +868,4 @@ document.getElementById('btnSairDia').onclick = sairEdicaoDia;
 carregarDoBackend();
 </script>
 </body>
-</html>
+    </html>
