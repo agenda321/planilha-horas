@@ -196,7 +196,6 @@
         .badge-dia-edicao.visivel { display: inline-block; }
         .progress-bar-wrap { background: #e0cfa8; border-radius: 20px; height: 10px; width: 100%; margin-top: 4px; }
         .progress-bar-fill { height: 10px; border-radius: 20px; background: linear-gradient(to right, #e6a800, #a07000); }
-        /* ===== TOAST ===== */
         .toast {
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
             background: #3b2a1f; color: #ffe1a0; padding: 10px 24px;
@@ -258,7 +257,6 @@
 </div>
 
 <script>
-// ===== TOAST =====
 function showToast(msg, duracao = 2500) {
     let toast = document.getElementById('toast');
     if (!toast) {
@@ -287,11 +285,11 @@ const ESCALA_MENSAL = {
     "Amarildo": ["SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
     "Igorh": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO"],
     "Joao": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO"],
-    "Deyvid": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR"],
+    "Dayvid": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR"],
     "Lindomar": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
     "Lucas": ["FR","FR","FR","FR","FS","FS","FS","RE","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO","SO"],
     "Luiz": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO"],
-    "Matias": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO"],
+    "Mathias": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO"],
     "Milton": ["FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","SO","SO","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
     "Pascoal": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO"],
     "Paulo": ["EA","EA","EA","EA","SO","FR","FR","EA","EA","EA","EA","FS","FS","FS","RE","EA","EA","EA","SO","FR","FR","EA","EA","EA","EA","SO","SO","FR","SO","SO"],
@@ -325,6 +323,7 @@ const GRUPOS_PILOTO = {
     "CARAVAN": ["Cleiton","Joao","Pascoal","Lindomar","Perisson","Rui","Yago"],
     "COPILOTO": ["Cauê","Felipe","Ruben","Ernesto","Daniela","Thales","Serafim","Ronaldo","Rodrigo","Tiago"],
 };
+
 function getGrupo(nome) {
     if (GRUPOS_PILOTO["CARAVAN"].includes(nome)) return "CARAVAN";
     if (GRUPOS_PILOTO["COPILOTO"].includes(nome)) return "COPILOTO";
@@ -377,7 +376,6 @@ function getColIndex(inp) {
     return Array.from(inp.parentNode.parentNode.children).indexOf(inp.parentNode) - 1;
 }
 
-// ===== NOVA FUNÇÃO: CALCULA DESLOCAMENTO DINÂMICO DE FR (DIAS 01 A 10) =====
 function calcularEscalaComFolgasDeslocadas() {
     let escalaTemporaria = JSON.parse(JSON.stringify(ESCALA_MENSAL));
     
@@ -385,12 +383,10 @@ function calcularEscalaComFolgasDeslocadas() {
         const nome = getNomeFromRow(row);
         if (!escalaTemporaria[nome]) return;
 
-        // Varre do dia 1 ao dia 10 (índices 0 a 9)
         for (let i = 0; i < 10; i++) {
             const inp = row.cells[i+1]?.querySelector('.input-hora');
             const temHoras = inp ? parseHora(inp.value) > 0 : false;
 
-            // Conflito: Tem horas e o dia original (ou já alterado neste laço) é FR
             if (temHoras && escalaTemporaria[nome][i] === "FR") {
                 let subIdx = i + 1;
                 let deslocado = false;
@@ -400,10 +396,9 @@ function calcularEscalaComFolgasDeslocadas() {
                     const subTemHoras = subInp ? parseHora(subInp.value) > 0 : false;
                     const subStatus = escalaTemporaria[nome][subIdx];
 
-                    // Se encontrar um dia SO e que não tenha horas lançadas nele
                     if (subStatus === "SO" && !subTemHoras) {
-                        escalaTemporaria[nome][i] = "SO"; // Dia do voo vira operacional para aceitar as horas
-                        escalaTemporaria[nome][subIdx] = "FR"; // Dia livre ganha a folga
+                        escalaTemporaria[nome][i] = "SO";
+                        escalaTemporaria[nome][subIdx] = "FR";
                         deslocado = true;
                     }
                     subIdx++;
@@ -414,39 +409,31 @@ function calcularEscalaComFolgasDeslocadas() {
     return escalaTemporaria;
 }
 
-// ===== REESTRUTURAÇÃO VISUAL DINÂMICA DAS CÉLULAS =====
 function atualizarClassesEBloqueiosCelulas() {
     const escalaDinamica = calcularEscalaComFolgasDeslocadas();
 
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const nome = getNomeFromRow(row);
         row.querySelectorAll('.input-hora').forEach((inp, i) => {
-            const statusOriginal = ESCALA_MENSAL[nome]?.[i] || "";
             const statusAtualizado = escalaDinamica[nome]?.[i] || "";
 
-            // Limpa classes antigas de status
             inp.classList.remove(
                 "status-dm","status-cm","status-vo","status-ea","status-fr",
                 "status-fs","status-fe","status-re","status-so","status-tr","status-tn","status-cq"
             );
 
-            // Aplica a classe visual do status recalculado
             if (statusAtualizado) {
                 inp.classList.add(getStatusClass(statusAtualizado));
             }
 
-            // Define se o campo fica bloqueado (FR deslocado vira bloqueado, ex-FR com horas vira liberado)
             if (isStatusBloqueado(statusAtualizado)) {
                 inp.disabled = true;
-                // Se for um FR deslocado e estiver vazio, exibe o texto "FR"
                 if (statusAtualizado === "FR" && parseHora(inp.value) === 0) {
                     inp.value = "FR";
                 }
             } else {
-                // Se o campo for operacional e contiver texto de status ("SO"), limpa para receber números
                 if (inp.value === "SO" || inp.value === "FR") inp.value = "";
                 
-                // Se estiver no modo de edição geral ou editando o dia específico, libera o campo
                 if (isEditing && (diaEditandoIndex === null || diaEditandoIndex === i)) {
                     inp.disabled = false;
                 } else {
@@ -504,7 +491,7 @@ function recalcularTudo() {
     const tfoot = document.getElementById('tfootTotal');
     tfoot.innerHTML = '';
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td style="font-weight:bold">🏁 TOTAL GERAL</td>${'<td></td>'.repeat(DIAS)}<td class="total-geral">${formatarHora(somaGeral)}</td>`;
+    tr.innerHTML = `<td style="font-weight:bold">🏁 TOTAL GERAL<\/td>${'<td><\/td>'.repeat(DIAS)}<td class="total-geral">${formatarHora(somaGeral)}<\/td>`;
     tfoot.appendChild(tr);
     validarStreaks();
     atualizarTotaisBotoesDias();
@@ -548,7 +535,7 @@ function ativarEdicaoDia(diaIndex) {
     if (diaEditandoIndex !== null && diaEditandoIndex !== diaIndex) sairEdicaoDia();
     diaEditandoIndex = diaIndex;
     
-    recalcularTudo(); // Força a atualização dos bloqueios e liberados baseados no dia ativo
+    recalcularTudo();
 
     destacarColuna(diaIndex);
     const th = document.querySelector(`#tableHeader th:nth-child(${diaIndex+2})`);
@@ -602,12 +589,12 @@ function mostrarComparativoDia(diaIndex) {
                 <td style="text-align:left;min-width:100px">${p.nome}</td>
                 <td style="min-width:80px"><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div></td>
                 <td style="color:${p.horas===0?'#aaa':'#000'}">${p.horas===0?p.status||'—':formatarHora(p.horas)}</td>
-                <td style="color:${diff>=0?'green':'red'}">${diff>=0?'+':''}${formatarHora(diff)}</td>
-            </tr>`;
+                <td style="color:${diff>=0?'green':'red'}">${diff>=0?'+':''}${formatarHora(diff)}<\/td>
+            </table>`;
         });
-        html += `</table><hr>`;
+        html += `<\/table><hr>`;
     }
-    html += `<button class="btn-fechar" id="fecharDetalhe">Fechar</button></div>`;
+    html += `<button class="btn-fechar" id="fecharDetalhe">Fechar</button><\/div>`;
     const modal = document.createElement('div');
     modal.className = 'modal-detalhe';
     modal.innerHTML = html;
@@ -634,7 +621,7 @@ async function mostrarDisponiveis(diaRef) {
                 html += `<p>Nenhum piloto disponível.</p>`;
             }
         }
-        html += `<button class="btn-fechar" id="fecharDisponiveis">Fechar</button></div>`;
+        html += `<button class="btn-fechar" id="fecharDisponiveis">Fechar</button><\/div>`;
         const modal = document.createElement('div');
         modal.className = 'modal-detalhe';
         modal.innerHTML = html;
@@ -657,7 +644,7 @@ async function carregarDoBackend() {
         atualizarDias();
 
         const thead = document.getElementById('tableHeader');
-        thead.innerHTML = `<tr><th>👤 PILOTO</th>${Array.from({length:DIAS},(_,i)=>`<th>${String(i+1).padStart(2,'00')}</th>`).join('')}<th>⭐ TOTAL</th></tr>`;
+        thead.innerHTML = `<td><th>👤 PILOTO</th>${Array.from({length:DIAS},(_,i)=>`<th>${String(i+1).padStart(2,'00')}</th>`).join('')}<th>⭐ TOTAL</th>`;
 
         const tbody = document.getElementById('planilhaBody');
         tbody.innerHTML = '';
@@ -668,7 +655,7 @@ async function carregarDoBackend() {
         for (let grupo of ["CESSNA 206/210","CARAVAN","COPILOTO"]) {
             const titleRow = document.createElement('tr');
             titleRow.classList.add('group-title-row');
-            titleRow.innerHTML = `<td colspan="${DIAS+2}"><i class="fas fa-${grupo==="COPILOTO"?"headset":"plane"}"></i> ${grupo}</td>`;
+            titleRow.innerHTML = `<td colspan="${DIAS+2}"><i class="fas fa-${grupo==="COPILOTO"?"headset":"plane"}"></i> ${grupo}<\/td>`;
             tbody.appendChild(titleRow);
 
             for (let p of grupos[grupo]) {
@@ -835,7 +822,7 @@ async function login() {
         document.getElementById('editModeChip').innerHTML = '✏️ EDIÇÃO ATIVO';
         document.getElementById('btnLimpar').disabled = false;
         document.getElementById('btnBloquear').disabled = false;
-        recalcularTudo(); // Reajusta permissões de inputs após o login
+        recalcularTudo();
         showToast("✅ Edição ativada! Toque num dia para editar.");
     } else if (senha !== null) {
         showToast("❌ Senha incorreta.");
@@ -851,7 +838,7 @@ function bloquear() {
     document.getElementById('editModeChip').innerHTML = '📖 MODO VISUALIZAÇÃO';
     document.getElementById('btnLimpar').disabled = true;
     document.getElementById('btnBloquear').disabled = true;
-    recalcularTudo(); // Trava os inputs novamente
+    recalcularTudo();
     showToast("🔒 Modo leitura ativado.");
 }
 
