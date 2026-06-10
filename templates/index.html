@@ -116,12 +116,45 @@
         }
         .input-hora.has-value { background: #fff1b5; border-color: #e4b149; box-shadow: 0 0 6px gold; }
         .input-hora.streak-day { background: #ffcc99; border-color: #e67300; }
-        .input-hora.folga-social {
+
+        /* Status bloqueados */
+        .input-hora.status-fs {
             background: #ffcccc;
             border-color: #cc0000;
             color: #990000;
             font-weight: bold;
         }
+        .input-hora.status-fr {
+            background: #cce5ff;
+            border-color: #0066cc;
+            color: #004099;
+            font-weight: bold;
+        }
+        .input-hora.status-fe {
+            background: #e6ccff;
+            border-color: #6600cc;
+            color: #4d0099;
+            font-weight: bold;
+        }
+        .input-hora.status-dm {
+            background: #cccccc;
+            border-color: #666666;
+            color: #333333;
+            font-weight: bold;
+        }
+        .input-hora.status-ea {
+            background: #fff4cc;
+            border-color: #cca300;
+            color: #806600;
+            font-weight: bold;
+        }
+        .input-hora.status-outro {
+            background: #e0e0e0;
+            border-color: #999999;
+            color: #555555;
+            font-weight: bold;
+        }
+
         .total-cell { background: #e7dbbc; font-weight: bold; }
         .group-title-row td {
             background: linear-gradient(135deg, #ccaa7a, #b1834d);
@@ -175,10 +208,6 @@
             display: none;
         }
         .badge-dia-edicao.visivel { display: inline-block; }
-        .btn-disponiveis {
-            background: radial-gradient(circle at 30% 20%, #7a9e6b, #557a44);
-            margin-left: auto;
-        }
         .sync-status {
             font-size: 0.7rem;
             background: #4c351e;
@@ -224,7 +253,8 @@
                 <span><i class="fas fa-headset"></i> Copiloto</span>
                 <span><i class="fas fa-exclamation-triangle"></i> 6+ dias consecutivos</span>
                 <span><i class="fas fa-chart-simple"></i> Toque rápido → horas | Toque longo → disponíveis</span>
-                <span><i class="fas fa-ban" style="color:#cc0000;"></i> FS = Folga Social</span>
+                <span style="background:#cce5ff; padding:2px 8px; border-radius:20px;">FR = Azul</span>
+                <span style="background:#ffcccc; padding:2px 8px; border-radius:20px;">FS = Vermelho</span>
             </div>
             <div class="status-chip" id="editModeChip">📖 MODO VISUALIZAÇÃO</div>
         </div>
@@ -310,10 +340,10 @@ function atualizarTotalLinha(row) {
     let inputs = row.querySelectorAll('.input-hora');
     let soma = 0;
     inputs.forEach(inp => { 
-        if (!inp.disabled && inp.value !== "FS") {
+        if (!inp.disabled && inp.value !== "FS" && inp.value !== "FR" && inp.value !== "FE" && inp.value !== "DM" && inp.value !== "EA") {
             soma += parseHora(inp.value); 
         }
-        inp.classList.toggle('has-value', parseHora(inp.value) > 0 && inp.value !== "FS");
+        inp.classList.toggle('has-value', parseHora(inp.value) > 0 && inp.value !== "FS" && inp.value !== "FR");
     });
     let totalCell = row.querySelector('.total-cell');
     if (totalCell) { totalCell.textContent = formatarHora(soma); totalCell.setAttribute('data-valor-raw', soma); }
@@ -324,7 +354,7 @@ function validarStreaks() {
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const inputs = row.querySelectorAll('.input-hora');
         const vals = Array.from(inputs).map(inp => {
-            if (inp.disabled || inp.value === "FS") return 0;
+            if (inp.disabled || inp.value === "FS" || inp.value === "FR" || inp.value === "FE" || inp.value === "DM" || inp.value === "EA") return 0;
             return parseHora(inp.value) > 0 ? 1 : 0;
         });
         let streak = 0, seq = new Array(DIAS).fill(false);
@@ -356,7 +386,9 @@ function totalHorasDia(diaIndex) {
     let soma = 0;
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
-        if (inp && !inp.disabled && inp.value !== "FS") soma += parseHora(inp.value);
+        if (inp && !inp.disabled && inp.value !== "FS" && inp.value !== "FR" && inp.value !== "FE" && inp.value !== "DM" && inp.value !== "EA") {
+            soma += parseHora(inp.value);
+        }
     });
     return soma;
 }
@@ -375,7 +407,7 @@ function sairEdicaoDia() {
     if (diaEditandoIndex !== null) {
         diaEditandoIndex = null;
         document.querySelectorAll('.input-hora').forEach(inp => {
-            if (!inp.disabled || inp.value === "FS") {
+            if (!inp.disabled) {
                 inp.disabled = !isEditing;
             }
         });
@@ -392,7 +424,9 @@ function ativarEdicaoDia(diaIndex) {
     document.querySelectorAll('.input-hora').forEach(inp => inp.disabled = true);
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
-        if (inp && inp.value !== "FS") inp.disabled = false;
+        if (inp && inp.value !== "FS" && inp.value !== "FR" && inp.value !== "FE" && inp.value !== "DM" && inp.value !== "EA") {
+            inp.disabled = false;
+        }
     });
     destacarColuna(diaIndex);
     const diaNum = String(diaIndex + 1).padStart(2, '0');
@@ -420,7 +454,11 @@ function mostrarComparativoDia(diaIndex) {
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const nome = row.cells[0].innerText.trim();
         const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
-        dadosDia[nome] = (inp && !inp.disabled && inp.value !== "FS") ? parseHora(inp.value) : 0;
+        let horas = 0;
+        if (inp && !inp.disabled && inp.value !== "FS" && inp.value !== "FR" && inp.value !== "FE" && inp.value !== "DM" && inp.value !== "EA") {
+            horas = parseHora(inp.value);
+        }
+        dadosDia[nome] = horas;
     });
     const gruposMap = {};
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
@@ -435,7 +473,7 @@ function mostrarComparativoDia(diaIndex) {
     for (let grupo in gruposMap) {
         let lista = gruposMap[grupo].sort((a,b)=>b.horas - a.horas);
         const media = lista.reduce((s,p)=>s+p.horas,0)/lista.length;
-        html += `<h3>${grupo}</h3><p>Média: ${formatarHora(media)} h</p><table class="tabela-detalhe">`;
+        html += `<h3>${grupo}</h3><p>Média: ${formatarHora(media)} h</p><table class="tabela-detalhe"><tr><th>Piloto</th><th>Horas</th><th>vs Média</th></tr>`;
         lista.forEach(p => {
             const diff = p.horas - media;
             html += `<tr><td style="text-align:left">${p.nome}<\/td><td style="color:${p.horas===0?'#aaa':'#000'}">${p.horas===0?'—':formatarHora(p.horas)}<\/td><td style="color:${diff>=0?'green':'red'}">${diff>=0?'+':''}${formatarHora(diff)}<\/td><\/tr>`;
@@ -449,9 +487,9 @@ function mostrarComparativoDia(diaIndex) {
     modal.onclick = e => { if (e.target === modal) modal.remove(); };
 }
 
-async function mostrarDisponiveis(diaReferencia) {
-    if (diaReferencia === null) { alert("Selecione um dia de referência clicando em um dos botões."); return; }
-    let diaSeguinte = diaReferencia + 1;
+async function mostrarDisponiveis(diaRef) {
+    if (diaRef === null) { alert("Selecione um dia de referência clicando em um dos botões."); return; }
+    let diaSeguinte = diaRef + 1;
     if (diaSeguinte >= DIAS) { alert("Último dia do mês. Não há dia seguinte para consulta."); return; }
     try {
         const res = await fetch(`/api/available_commanders/${diaSeguinte}`);
@@ -511,10 +549,31 @@ async function carregarDoBackend() {
                     inp.placeholder = '0,0';
                     
                     const status = ESCALA_MENSAL[p.name]?.[i] || "";
+                    
                     if (status === "FS") {
                         inp.disabled = true;
-                        inp.classList.add("folga-social");
+                        inp.classList.add("status-fs");
                         inp.value = "FS";
+                    } else if (status === "FR") {
+                        inp.disabled = true;
+                        inp.classList.add("status-fr");
+                        inp.value = "FR";
+                    } else if (status === "FE") {
+                        inp.disabled = true;
+                        inp.classList.add("status-fe");
+                        inp.value = "FE";
+                    } else if (status === "DM") {
+                        inp.disabled = true;
+                        inp.classList.add("status-dm");
+                        inp.value = "DM";
+                    } else if (status === "EA") {
+                        inp.disabled = true;
+                        inp.classList.add("status-ea");
+                        inp.value = "EA";
+                    } else if (status === "CM" || status === "TR" || status === "TN" || status === "CQ") {
+                        inp.disabled = true;
+                        inp.classList.add("status-outro");
+                        inp.value = status;
                     } else {
                         const valor = logs[p.name]?.[i+1] || 0;
                         inp.value = formatarHora(valor);
@@ -522,14 +581,14 @@ async function carregarDoBackend() {
                     }
                     
                     inp.addEventListener('input', function() { 
-                        if ((diaEditandoIndex !== null || isEditing) && this.value !== "FS") { 
+                        if ((diaEditandoIndex !== null || isEditing) && this.value !== "FS" && this.value !== "FR" && this.value !== "FE" && this.value !== "DM" && this.value !== "EA") { 
                             atualizarTotalLinha(row); 
                             recalcularTudo(); 
                             if(isEditing && password) salvarNoBackend(); 
                         } 
                     });
                     inp.addEventListener('blur', function() { 
-                        if ((diaEditandoIndex !== null || isEditing) && this.value !== "FS") { 
+                        if ((diaEditandoIndex !== null || isEditing) && this.value !== "FS" && this.value !== "FR" && this.value !== "FE" && this.value !== "DM" && this.value !== "EA") { 
                             let v = parseHora(this.value); 
                             this.value = formatarHora(v); 
                             atualizarTotalLinha(row); 
@@ -560,7 +619,7 @@ async function salvarNoBackend() {
         const nome = row.cells[0].innerText.trim();
         logs[nome] = {};
         row.querySelectorAll('.input-hora').forEach((inp, i) => {
-            if (!inp.disabled && inp.value !== "FS") {
+            if (!inp.disabled && inp.value !== "FS" && inp.value !== "FR" && inp.value !== "FE" && inp.value !== "DM" && inp.value !== "EA") {
                 const val = parseHora(inp.value);
                 if (val > 0) logs[nome][i+1] = val;
             }
@@ -576,14 +635,55 @@ async function salvarNoBackend() {
 function criarBotoesDias() {
     const container = document.getElementById('botoesDias');
     container.innerHTML = '';
+    
     for (let i = 0; i < DIAS; i++) {
         const btn = document.createElement('button');
         btn.classList.add('btn-dia');
         btn.innerHTML = `<span class="dia-num">${String(i+1).padStart(2,'00')}</span><span class="dia-total"></span>`;
         
-        // Toque rápido (clique) -> mostrar horas
+        let touchTimer = null;
+        let isLongPress = false;
+        
+        btn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isLongPress = false;
+            touchTimer = setTimeout(() => {
+                isLongPress = true;
+                if (diaReferencia !== null) {
+                    const btnAntigo = document.querySelector(`.btn-dia[data-dia="${diaReferencia}"]`);
+                    if (btnAntigo) btnAntigo.classList.remove('dia-selecionado');
+                }
+                diaReferencia = i;
+                btn.classList.add('dia-selecionado');
+                btn.setAttribute('data-dia', i);
+                mostrarDisponiveis(i);
+            }, 500);
+        });
+        
+        btn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (touchTimer) clearTimeout(touchTimer);
+            if (!isLongPress) {
+                if (diaReferencia !== null) {
+                    const btnAntigo = document.querySelector(`.btn-dia[data-dia="${diaReferencia}"]`);
+                    if (btnAntigo) btnAntigo.classList.remove('dia-selecionado');
+                }
+                diaReferencia = i;
+                btn.classList.add('dia-selecionado');
+                btn.setAttribute('data-dia', i);
+                if (isEditing) {
+                    ativarEdicaoDia(i);
+                } else {
+                    mostrarComparativoDia(i);
+                }
+            }
+        });
+        
+        btn.addEventListener('touchcancel', (e) => {
+            if (touchTimer) clearTimeout(touchTimer);
+        });
+        
         btn.onclick = () => {
-            if (longPressTimer) clearTimeout(longPressTimer);
             if (diaReferencia !== null) {
                 const btnAntigo = document.querySelector(`.btn-dia[data-dia="${diaReferencia}"]`);
                 if (btnAntigo) btnAntigo.classList.remove('dia-selecionado');
@@ -598,26 +698,6 @@ function criarBotoesDias() {
             }
         };
         
-        // Toque longo -> mostrar disponíveis
-        btn.ontouchstart = (e) => {
-            e.preventDefault();
-            longPressTimer = setTimeout(() => {
-                if (diaReferencia !== null) {
-                    const btnAntigo = document.querySelector(`.btn-dia[data-dia="${diaReferencia}"]`);
-                    if (btnAntigo) btnAntigo.classList.remove('dia-selecionado');
-                }
-                diaReferencia = i;
-                btn.classList.add('dia-selecionado');
-                btn.setAttribute('data-dia', i);
-                mostrarDisponiveis(i);
-            }, 500);
-        };
-        
-        btn.ontouchend = () => {
-            if (longPressTimer) clearTimeout(longPressTimer);
-        };
-        
-        // Para mouse (clique direito)
         btn.oncontextmenu = (e) => {
             e.preventDefault();
             if (diaReferencia !== null) {
@@ -636,7 +716,6 @@ function criarBotoesDias() {
     atualizarTotaisBotoesDias();
 }
 
-// Modal de senha estilizado
 function exibirModalSenha() {
     return new Promise((resolve) => {
         const modalDiv = document.createElement('div');
@@ -684,7 +763,9 @@ function bloquear() {
         password = "";
         sairEdicaoDia();
         document.querySelectorAll('.input-hora').forEach(inp => {
-            if (inp.value !== "FS") inp.disabled = true;
+            if (inp.value !== "FS" && inp.value !== "FR" && inp.value !== "FE" && inp.value !== "DM" && inp.value !== "EA") {
+                inp.disabled = true;
+            }
         });
         document.getElementById('statusBadge').innerHTML = '🔒 SOMENTE LEITURA';
         document.getElementById('editModeChip').innerHTML = '📖 MODO VISUALIZAÇÃO';
@@ -698,7 +779,9 @@ function limpar() {
     if (!isEditing) return alert("Desbloqueie primeiro.");
     if (confirm("Limpar todos os valores?")) {
         document.querySelectorAll('.input-hora').forEach(inp => {
-            if (inp.value !== "FS") inp.value = '0,0';
+            if (inp.value !== "FS" && inp.value !== "FR" && inp.value !== "FE" && inp.value !== "DM" && inp.value !== "EA") {
+                inp.value = '0,0';
+            }
         });
         recalcularTudo();
         salvarNoBackend();
@@ -713,4 +796,4 @@ document.getElementById('btnSairDia').onclick = sairEdicaoDia;
 carregarDoBackend();
 </script>
 </body>
-                                           </html>
+    </html>
