@@ -6,15 +6,18 @@ from escala import ESCALA_MENSAL
 
 app = Flask(__name__)
 
-# Configuração do banco de dados
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "postgresql://user:password@localhost/mydatabase")
+# Configuração do banco de dados - CORRIGIDO postgres:// → postgresql://
+database_url = os.environ.get("DATABASE_URL", "postgresql://user:password@localhost/mydatabase")
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
-# Senha de edição
+# Senhas de edição - CORRIGIDO para aceitar duas senhas
 EDIT_PASSWORD = os.environ.get("EDIT_PASSWORD", "Emerson")
+EDIT_PASSWORD_2 = os.environ.get("EDIT_PASSWORD_2", "Bispo")
 
-# Códigos disponíveis
 CODIGOS_DISPONIVEIS = ["VO", "CQ", "RE", "SO"]
 CORES = {
     "DM": "laranja", "CM": "laranja_claro", "VO": "azul", "EA": "amarelo",
@@ -22,7 +25,6 @@ CORES = {
     "SO": "branco", "TR": "amarelo_escuro", "TN": "azul_claro", "CQ": "azul_medio"
 }
 
-# Modelos
 class Pilot(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), unique=True, nullable=False)
@@ -50,7 +52,7 @@ def index():
 @app.route("/api/login", methods=["POST"])
 def login():
     data = request.get_json()
-    if data.get("password") == EDIT_PASSWORD:
+    if data.get("password") in [EDIT_PASSWORD, EDIT_PASSWORD_2]:
         return jsonify({"success": True})
     return jsonify({"success": False}), 401
 
@@ -59,27 +61,28 @@ def get_data():
     month, year = datetime.now().month, datetime.now().year
     pilots = Pilot.query.all()
     logs = FlightLog.query.filter_by(month=month, year=year).all()
-    
+
     result = {
         "pilots": [{"name": p.name, "group": p.group, "full_name": p.full_name or p.name} for p in pilots],
         "logs": {}
     }
-    
+
     for log in logs:
         if log.pilot.name not in result["logs"]:
             result["logs"][log.pilot.name] = {}
         result["logs"][log.pilot.name][log.day] = log.hours
-    
+
     return jsonify(result)
 
 @app.route("/api/data", methods=["POST"])
 def save_data():
     data = request.get_json()
-    if data.get("password") != EDIT_PASSWORD:
+    # CORRIGIDO: aceita as duas senhas
+    if data.get("password") not in [EDIT_PASSWORD, EDIT_PASSWORD_2]:
         return jsonify({"success": False}), 401
-    
+
     month, year = datetime.now().month, datetime.now().year
-    
+
     for pilot_name, days in data.get("logs", {}).items():
         pilot = Pilot.query.filter_by(name=pilot_name).first()
         if not pilot:
@@ -95,7 +98,7 @@ def save_data():
                 db.session.add(FlightLog(
                     pilot_id=pilot.id, day=day, month=month, year=year, hours=float(hours)
                 ))
-    
+
     db.session.commit()
     return jsonify({"success": True})
 
@@ -103,7 +106,7 @@ def save_data():
 def get_available_commanders(day_index):
     available = {"CESSNA 206/210": [], "CARAVAN": [], "COPILOTO": []}
     pilots = Pilot.query.all()
-    
+
     for pilot in pilots:
         escala = ESCALA_MENSAL.get(pilot.name, [])
         if day_index < len(escala):
@@ -113,20 +116,19 @@ def get_available_commanders(day_index):
         else:
             status = "VO"
             cor = "azul"
-        
+
         if status in CODIGOS_DISPONIVEIS:
             available[pilot.group].append({
                 "name": pilot.full_name or pilot.name,
                 "status": status,
                 "color": cor
             })
-    
+
     return jsonify(available)
 
-# Inicialização do banco de dados (roda automaticamente)
 with app.app_context():
     db.create_all()
-    
+
     if Pilot.query.count() == 0:
         grupos = {
             "Andre": "CESSNA 206/210", "Andrade": "CESSNA 206/210", "Adelio": "CESSNA 206/210",
@@ -145,7 +147,7 @@ with app.app_context():
             "Ernesto": "COPILOTO", "Daniela": "COPILOTO", "Thales": "COPILOTO",
             "Serafim": "COPILOTO", "Ronaldo": "COPILOTO", "Rodrigo": "COPILOTO", "Tiago": "COPILOTO"
         }
-        
+
         nomes_completos = {
             "Adelio": "Adelio Costa Felinto", "Otto": "Albert Otto Azevedo",
             "Andre": "Andre Luis Fernandes", "Cleiton": "Cleiton Taumaturgo",
@@ -170,11 +172,11 @@ with app.app_context():
             "Thales": "Thales Araujo Penna", "Serafim": "Tiago Carvalho Serafim",
             "Tiago": "Tiago Pinto Quirino"
         }
-        
+
         for nome, grupo in grupos.items():
             piloto = Pilot(name=nome, full_name=nomes_completos.get(nome, nome), group=grupo)
             db.session.add(piloto)
-        
+
         db.session.commit()
 
 if __name__ == "__main__":
