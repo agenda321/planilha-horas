@@ -458,7 +458,8 @@ function atualizarTotalLinha(row) {
     let soma = 0;
     inputs.forEach(inp => { 
         if (!inp.disabled && !isStatusBloqueado(ESCALA_MENSAL[row.cells[0].innerText.trim()]?.[Array.from(inp.parentNode.parentNode.children).indexOf(inp.parentNode)-1])) {
-            soma += parseHora(inp.value); 
+            let val = parseHora(inp.value);
+            if (!isNaN(val)) soma += val;
         }
         inp.classList.toggle('has-value', parseHora(inp.value) > 0 && !inp.disabled);
     });
@@ -470,10 +471,11 @@ function atualizarTotalLinha(row) {
 function validarStreaks() {
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const inputs = row.querySelectorAll('.input-hora');
-        const vals = Array.from(inputs).map(inp => {
-            const status = ESCALA_MENSAL[row.cells[0].innerText.trim()]?.[Array.from(inp.parentNode.parentNode.children).indexOf(inp.parentNode)-1];
+        const vals = Array.from(inputs).map((inp, idx) => {
+            const status = ESCALA_MENSAL[row.cells[0].innerText.trim()]?.[idx];
             if (isStatusBloqueado(status)) return 0;
-            return parseHora(inp.value) > 0 ? 1 : 0;
+            let val = parseHora(inp.value);
+            return val > 0 ? 1 : 0;
         });
         let streak = 0, seq = new Array(DIAS).fill(false);
         for (let i = 0; i < DIAS; i++) {
@@ -524,6 +526,20 @@ function atualizarTotaisBotoesDias() {
 
 function sairEdicaoDia() {
     if (diaEditandoIndex !== null) {
+        // Restaura os campos SO que não foram editados (voltam a exibir "SO")
+        document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
+            const status = ESCALA_MENSAL[row.cells[0].innerText.trim()]?.[diaEditandoIndex];
+            if (status === "SO") {
+                const inp = row.cells[diaEditandoIndex + 1]?.querySelector('.input-hora');
+                if (inp && (inp.value === "" || inp.value === "0,0" || parseHora(inp.value) === 0)) {
+                    inp.value = "SO";
+                    inp.classList.add("status-so");
+                    inp.disabled = true;
+                    inp.classList.remove("has-value");
+                }
+            }
+        });
+        
         diaEditandoIndex = null;
         document.querySelectorAll('.input-hora').forEach(inp => {
             if (!inp.disabled && !isStatusBloqueado(ESCALA_MENSAL[inp.closest('tr').cells[0].innerText.trim()]?.[Array.from(inp.parentNode.parentNode.children).indexOf(inp.parentNode)-1])) {
@@ -534,20 +550,41 @@ function sairEdicaoDia() {
         document.getElementById('btnSairDia').style.display = 'none';
         document.querySelectorAll('.btn-dia').forEach(btn => btn.classList.remove('dia-editando'));
         limparDestaqueColuna();
+        recalcularTudo();
     }
 }
 
 function ativarEdicaoDia(diaIndex) {
     if (diaEditandoIndex !== null && diaEditandoIndex !== diaIndex) sairEdicaoDia();
     diaEditandoIndex = diaIndex;
+    
+    // Desabilita todos os inputs primeiro
     document.querySelectorAll('.input-hora').forEach(inp => inp.disabled = true);
+    
+    // Habilita apenas os SO e os campos que já têm horas (para edição)
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const status = ESCALA_MENSAL[row.cells[0].innerText.trim()]?.[diaIndex];
-        if (!isStatusBloqueado(status)) {
-            const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
-            if (inp) inp.disabled = false;
+        const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
+        if (inp) {
+            if (status === "SO") {
+                // Campo SO: fica vazio e editável
+                inp.disabled = false;
+                inp.classList.remove("status-so");
+                inp.classList.remove("has-value");
+                if (inp.value === "SO" || parseHora(inp.value) === 0) {
+                    inp.value = "";
+                }
+                inp.placeholder = "0,0";
+            } else if (!isStatusBloqueado(status)) {
+                // Campo normal (com horas): editável
+                inp.disabled = false;
+                inp.placeholder = "0,0";
+                if (inp.value === "SO") inp.value = "";
+            }
+            // Campos bloqueados permanecem desabilitados
         }
     });
+    
     destacarColuna(diaIndex);
     const diaNum = String(diaIndex + 1).padStart(2, '0');
     document.getElementById('badgeDiaEdicao').textContent = `✏️ EDITANDO DIA ${diaNum}`;
@@ -678,8 +715,12 @@ async function carregarDoBackend() {
                         inp.value = status;
                     } else {
                         const valor = logs[p.name]?.[i+1] || 0;
-                        inp.value = valor === 0 ? "" : formatarHora(valor);
-                        if (valor !== 0) total += valor;
+                        if (valor !== 0) {
+                            inp.value = formatarHora(valor);
+                            total += valor;
+                        } else {
+                            inp.value = "";
+                        }
                     }
                     
                     inp.addEventListener('input', function() { 
@@ -899,4 +940,4 @@ document.getElementById('btnSairDia').onclick = sairEdicaoDia;
 carregarDoBackend();
 </script>
 </body>
-</html>
+    </html>
