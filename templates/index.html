@@ -4,6 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Planilha de Voo | Registro de Horas</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1a237e">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- iOS (Safari) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Planilha Horas">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * { box-sizing: border-box; }
@@ -70,16 +82,35 @@
             flex-wrap: wrap; gap: 15px; margin-bottom: 20px;
         }
         .dias-botoes {
-            display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;
-            margin: 16px 20px; padding: 12px; background: #ddcdac;
-            border-radius: 40px; box-shadow: inset 0 0 0 2px #fef1cf, inset 0 0 0 4px #c2a570;
+            display: grid;
+            grid-template-columns: repeat(7, minmax(50px, 1fr));
+            gap: 8px;
+            margin: 16px 20px;
+            padding: 12px;
+            background: #ddcdac;
+            border-radius: 40px;
+            box-shadow: inset 0 0 0 2px #fef1cf, inset 0 0 0 4px #c2a570;
         }
         .btn-dia {
             background: radial-gradient(circle at 30% 20%, #f0dc9f, #c29a5e);
-            border: none; font-size: 0.8rem; font-weight: bold; padding: 8px 0;
-            border-radius: 60px; box-shadow: 0 3px 0 #6b4828; cursor: pointer;
-            transition: 0.05s linear; text-align: center; display: flex;
-            flex-direction: column; align-items: center; gap: 2px; line-height: 1.2;
+            border: none;
+            font-size: 0.85rem;
+            font-weight: bold;
+            padding: 8px 0;
+            border-radius: 60px;
+            box-shadow: 0 3px 0 #6b4828;
+            cursor: pointer;
+            transition: 0.05s linear;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            line-height: 1.2;
+        }
+        @media (max-width: 600px) {
+            .dias-botoes { grid-template-columns: repeat(7, minmax(40px, 1fr)); gap: 5px; }
+            .btn-dia { font-size: 0.7rem; padding: 4px 0; }
         }
         .btn-dia.dia-selecionado {
             background: radial-gradient(circle at 30% 20%, #ffe066, #e6a800);
@@ -94,117 +125,167 @@
         .btn-dia .dia-total { font-size: 0.65rem; color: #5a3a10; }
         .btn-dia.tem-dados .dia-total { color: #a05000; font-weight: bold; }
         .table-wrapper {
-            overflow-x: auto; margin: 20px 12px; background: #ddcdac;
-            padding: 8px; border-radius: 24px; max-height: 60vh;
+            overflow-x: auto;
+            margin: 20px 12px;
+            background: #ddcdac;
+            padding: 8px;
+            border-radius: 24px;
+            max-height: 60vh;
         }
         .planilha { width: 100%; border-collapse: collapse; background: #fff6e8; min-width: 1000px; }
         .planilha th, .planilha td { border: 1px solid #ebddbb; padding: 8px 4px; text-align: center; }
         .planilha th {
             background: linear-gradient(to bottom, #b88954, #7e5937);
-            color: #fff4e0; position: sticky; top: 0; z-index: 10;
+            color: #fff4e0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
         .planilha td:first-child {
-            background: #f7efdc; font-weight: bold; text-align: left;
-            position: sticky; left: 0; z-index: 5; border-right: 2px solid #dbb87a;
+            background: #f7efdc;
+            font-weight: bold;
+            text-align: left;
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            border-right: 2px solid #dbb87a;
         }
         .planilha th:first-child { position: sticky; left: 0; z-index: 15; background: #9c7a50; }
         .planilha th.col-ativa { background: linear-gradient(to bottom, #e6a800, #a07000) !important; }
         .planilha td.col-ativa { background: #fffacc !important; }
+
+        /* ========== CORES DOS STATUS ========== */
         .input-hora {
-            width: 70px; padding: 6px; text-align: center; font-family: monospace;
-            background: #f9f2e0; border: 2px solid #c9aa77; border-radius: 16px;
+            width: 70px;
+            padding: 6px;
+            text-align: center;
+            font-family: monospace;
+            background: #f9f2e0;
+            border: 2px solid #c9aa77;
+            border-radius: 16px;
+            transition: all 0.2s;
         }
         .input-hora.has-value { background: #fff1b5; border-color: #e4b149; box-shadow: 0 0 6px gold; }
         .input-hora.streak-day { background: #ffcc99; border-color: #e67300; }
 
-        /* Status bloqueados */
-        .input-hora.status-fs {
-            background: #ffcccc;
-            border-color: #cc0000;
-            color: #990000;
-            font-weight: bold;
-        }
-        .input-hora.status-fr {
-            background: #cce5ff;
-            border-color: #0066cc;
-            color: #004099;
-            font-weight: bold;
-        }
-        .input-hora.status-fe {
-            background: #e6ccff;
-            border-color: #6600cc;
-            color: #4d0099;
-            font-weight: bold;
-        }
-        .input-hora.status-dm {
-            background: #cccccc;
-            border-color: #666666;
-            color: #333333;
-            font-weight: bold;
-        }
-        .input-hora.status-ea {
-            background: #fff4cc;
-            border-color: #cca300;
-            color: #806600;
-            font-weight: bold;
-        }
-        .input-hora.status-outro {
-            background: #e0e0e0;
-            border-color: #999999;
-            color: #555555;
-            font-weight: bold;
-        }
+        .input-hora.status-dm, .input-hora.status-cm { background: #ffb366; border-color: #cc5200; color: #662200; font-weight: bold; }
+        .input-hora.status-vo, .input-hora.status-cq, .input-hora.status-tn { background: #99ccff; border-color: #0066cc; color: #003366; font-weight: bold; }
+        .input-hora.status-ea, .input-hora.status-tr { background: #ffff99; border-color: #cccc00; color: #666600; font-weight: bold; }
+        .input-hora.status-fr { background: #90ee90; border-color: #008000; color: #004d00; font-weight: bold; }
+        .input-hora.status-fs { background: #ff9999; border-color: #cc0000; color: #660000; font-weight: bold; }
+        .input-hora.status-fe { background: #ccffcc; border-color: #00cc00; color: #006600; font-weight: bold; }
+        .input-hora.status-re { background: #ffccff; border-color: #cc66cc; color: #660066; font-weight: bold; }
+        .input-hora.status-so { background: #ffffff; border-color: #999999; color: #333333; font-weight: bold; }
 
         .total-cell { background: #e7dbbc; font-weight: bold; }
         .group-title-row td {
             background: linear-gradient(135deg, #ccaa7a, #b1834d);
-            font-weight: bold; font-size: 1.2rem; text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            text-align: center;
         }
         .info-footer {
-            display: flex; justify-content: space-between; align-items: center;
-            flex-wrap: wrap; margin: 16px 24px; gap: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 16px 24px;
+            gap: 12px;
         }
         .legenda {
-            background: #eedbba; border-radius: 36px; padding: 6px 18px;
-            font-size: 11px; display: flex; gap: 20px; flex-wrap: wrap;
+            background: #eedbba;
+            border-radius: 36px;
+            padding: 10px 18px;
+            font-size: 11px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+        }
+        .legenda-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 10px;
+            border-radius: 20px;
         }
         .status-chip {
-            background: #4c351e; border-radius: 60px; padding: 5px 15px;
-            font-size: 0.7rem; font-weight: bold; color: #ffe1a0;
+            background: #4c351e;
+            border-radius: 60px;
+            padding: 5px 15px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #ffe1a0;
             box-shadow: inset 0 1px 3px #ffdf9a, 0 2px 4px black;
         }
         .modal-senha, .modal-detalhe {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); backdrop-filter: blur(6px);
-            display: flex; align-items: center; justify-content: center; z-index: 2000;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
         }
         .card-senha, .card-detalhe {
-            background: #fdf5e6; border-radius: 48px; width: 90%; max-width: 400px;
-            padding: 24px; box-shadow: 0 20px 35px black; max-height: 85vh; overflow-y: auto;
+            background: #fdf5e6;
+            border-radius: 48px;
+            width: 90%;
+            max-width: 400px;
+            padding: 24px;
+            box-shadow: 0 20px 35px black;
+            max-height: 85vh;
+            overflow-y: auto;
         }
         .card-senha { text-align: center; max-width: 350px; }
         .card-senha input {
-            width: 100%; padding: 12px; margin: 20px 0; border-radius: 60px;
-            border: 2px solid #b67e45; background: #fff2e0; font-size: 1rem;
+            width: 100%;
+            padding: 12px;
+            margin: 20px 0;
+            border-radius: 60px;
+            border: 2px solid #b67e45;
+            background: #fff2e0;
+            font-size: 1rem;
             text-align: center;
         }
         .botoes-senha { display: flex; gap: 15px; justify-content: center; }
         .btn-modal {
-            background: #a07143; color: white; border: none; padding: 8px 22px;
-            border-radius: 60px; cursor: pointer;
+            background: #a07143;
+            color: white;
+            border: none;
+            padding: 8px 22px;
+            border-radius: 60px;
+            cursor: pointer;
         }
         .tabela-detalhe { width: 100%; border-collapse: collapse; margin-top: 10px; }
         .tabela-detalhe th, .tabela-detalhe td {
-            border: 1px solid #ccb28b; padding: 8px; text-align: left;
+            border: 1px solid #ccb28b;
+            padding: 8px;
+            text-align: left;
         }
         .btn-fechar {
-            background: #b07842; border: none; padding: 10px 28px;
-            border-radius: 60px; color: white; margin-top: 20px;
-            cursor: pointer; display: block; margin-left: auto; margin-right: auto;
+            background: #b07842;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 60px;
+            color: white;
+            margin-top: 20px;
+            cursor: pointer;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
         }
         .badge-dia-edicao {
-            background: #e6a800; border-radius: 60px; padding: 5px 14px;
-            font-size: 0.75rem; font-weight: bold; color: #3b2a00;
+            background: #e6a800;
+            border-radius: 60px;
+            padding: 5px 14px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #3b2a00;
             display: none;
         }
         .badge-dia-edicao.visivel { display: inline-block; }
@@ -248,13 +329,15 @@
         </div>
         <div class="info-footer">
             <div class="legenda">
-                <span><i class="fas fa-plane"></i> Cessna 206/210</span>
-                <span><i class="fas fa-plane"></i> Caravan</span>
-                <span><i class="fas fa-headset"></i> Copiloto</span>
-                <span><i class="fas fa-exclamation-triangle"></i> 6+ dias consecutivos</span>
+                <span class="legenda-item" style="background:#ffb366;">DM/CM = Laranja</span>
+                <span class="legenda-item" style="background:#99ccff;">VO/CQ/TN = Azul</span>
+                <span class="legenda-item" style="background:#ffff99;">EA/TR = Amarelo</span>
+                <span class="legenda-item" style="background:#90ee90;">FR = Verde</span>
+                <span class="legenda-item" style="background:#ff9999;">FS = Vermelho</span>
+                <span class="legenda-item" style="background:#ccffcc;">FE = Verde Claro</span>
+                <span class="legenda-item" style="background:#ffccff;">RE = Rosa</span>
+                <span class="legenda-item" style="background:#ffffff;">SO = Branco</span>
                 <span><i class="fas fa-chart-simple"></i> Toque rápido → horas | Toque longo → disponíveis</span>
-                <span style="background:#cce5ff; padding:2px 8px; border-radius:20px;">FR = Azul</span>
-                <span style="background:#ffcccc; padding:2px 8px; border-radius:20px;">FS = Vermelho</span>
             </div>
             <div class="status-chip" id="editModeChip">📖 MODO VISUALIZAÇÃO</div>
         </div>
@@ -336,14 +419,32 @@ function atualizarDias() {
 function parseHora(v) { if (!v) return 0; let n = parseFloat(String(v).trim().replace(',','.')); return isNaN(n) ? 0 : n; }
 function formatarHora(n) { return n.toFixed(1).replace('.',','); }
 
+function getStatusClass(status) {
+    switch(status) {
+        case "DM": return "status-dm";
+        case "CM": return "status-cm";
+        case "VO": return "status-vo";
+        case "EA": return "status-ea";
+        case "FR": return "status-fr";
+        case "FS": return "status-fs";
+        case "FE": return "status-fe";
+        case "RE": return "status-re";
+        case "SO": return "status-so";
+        case "TR": return "status-tr";
+        case "TN": return "status-tn";
+        case "CQ": return "status-cq";
+        default: return "";
+    }
+}
+
 function atualizarTotalLinha(row) {
     let inputs = row.querySelectorAll('.input-hora');
     let soma = 0;
     inputs.forEach(inp => { 
-        if (!inp.disabled && inp.value !== "FS" && inp.value !== "FR" && inp.value !== "FE" && inp.value !== "DM" && inp.value !== "EA") {
+        if (!inp.disabled && !inp.classList.contains("status-fr") && !inp.classList.contains("status-fs") && !inp.classList.contains("status-fe") && !inp.classList.contains("status-dm") && !inp.classList.contains("status-ea")) {
             soma += parseHora(inp.value); 
         }
-        inp.classList.toggle('has-value', parseHora(inp.value) > 0 && inp.value !== "FS" && inp.value !== "FR");
+        inp.classList.toggle('has-value', parseHora(inp.value) > 0 && !inp.disabled);
     });
     let totalCell = row.querySelector('.total-cell');
     if (totalCell) { totalCell.textContent = formatarHora(soma); totalCell.setAttribute('data-valor-raw', soma); }
@@ -354,7 +455,7 @@ function validarStreaks() {
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const inputs = row.querySelectorAll('.input-hora');
         const vals = Array.from(inputs).map(inp => {
-            if (inp.disabled || inp.value === "FS" || inp.value === "FR" || inp.value === "FE" || inp.value === "DM" || inp.value === "EA") return 0;
+            if (inp.disabled || inp.classList.contains("status-fr") || inp.classList.contains("status-fs") || inp.classList.contains("status-fe") || inp.classList.contains("status-dm") || inp.classList.contains("status-ea")) return 0;
             return parseHora(inp.value) > 0 ? 1 : 0;
         });
         let streak = 0, seq = new Array(DIAS).fill(false);
@@ -386,7 +487,7 @@ function totalHorasDia(diaIndex) {
     let soma = 0;
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
-        if (inp && !inp.disabled && inp.value !== "FS" && inp.value !== "FR" && inp.value !== "FE" && inp.value !== "DM" && inp.value !== "EA") {
+        if (inp && !inp.disabled && !inp.classList.contains("status-fr") && !inp.classList.contains("status-fs") && !inp.classList.contains("status-fe") && !inp.classList.contains("status-dm") && !inp.classList.contains("status-ea")) {
             soma += parseHora(inp.value);
         }
     });
@@ -407,7 +508,7 @@ function sairEdicaoDia() {
     if (diaEditandoIndex !== null) {
         diaEditandoIndex = null;
         document.querySelectorAll('.input-hora').forEach(inp => {
-            if (!inp.disabled) {
+            if (!inp.disabled && !inp.classList.contains("status-fr") && !inp.classList.contains("status-fs") && !inp.classList.contains("status-fe") && !inp.classList.contains("status-dm") && !inp.classList.contains("status-ea")) {
                 inp.disabled = !isEditing;
             }
         });
@@ -424,7 +525,7 @@ function ativarEdicaoDia(diaIndex) {
     document.querySelectorAll('.input-hora').forEach(inp => inp.disabled = true);
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
-        if (inp && inp.value !== "FS" && inp.value !== "FR" && inp.value !== "FE" && inp.value !== "DM" && inp.value !== "EA") {
+        if (inp && !inp.classList.contains("status-fr") && !inp.classList.contains("status-fs") && !inp.classList.contains("status-fe") && !inp.classList.contains("status-dm") && !inp.classList.contains("status-ea")) {
             inp.disabled = false;
         }
     });
@@ -455,7 +556,7 @@ function mostrarComparativoDia(diaIndex) {
         const nome = row.cells[0].innerText.trim();
         const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
         let horas = 0;
-        if (inp && !inp.disabled && inp.value !== "FS" && inp.value !== "FR" && inp.value !== "FE" && inp.value !== "DM" && inp.value !== "EA") {
+        if (inp && !inp.disabled && !inp.classList.contains("status-fr") && !inp.classList.contains("status-fs") && !inp.classList.contains("status-fe") && !inp.classList.contains("status-dm") && !inp.classList.contains("status-ea")) {
             horas = parseHora(inp.value);
         }
         dadosDia[nome] = horas;
@@ -473,7 +574,7 @@ function mostrarComparativoDia(diaIndex) {
     for (let grupo in gruposMap) {
         let lista = gruposMap[grupo].sort((a,b)=>b.horas - a.horas);
         const media = lista.reduce((s,p)=>s+p.horas,0)/lista.length;
-        html += `<h3>${grupo}</h3><p>Média: ${formatarHora(media)} h</p><table class="tabela-detalhe"><tr><th>Piloto</th><th>Horas</th><th>vs Média</th></tr>`;
+        html += `<h3>${grupo}</h3><p>Média: ${formatarHora(media)} h</p><table class="tabela-detalhe">`;
         lista.forEach(p => {
             const diff = p.horas - media;
             html += `<tr><td style="text-align:left">${p.nome}<\/td><td style="color:${p.horas===0?'#aaa':'#000'}">${p.horas===0?'—':formatarHora(p.horas)}<\/td><td style="color:${diff>=0?'green':'red'}">${diff>=0?'+':''}${formatarHora(diff)}<\/td><\/tr>`;
@@ -520,7 +621,7 @@ async function carregarDoBackend() {
         const logs = data.logs;
         
         const thead = document.getElementById('tableHeader');
-        thead.innerHTML = `<tr><th>👤 PILOTO</th>${Array.from({length:DIAS},(_,i)=>`<th>${String(i+1).padStart(2,'0')}</th>`).join('')}<th>⭐ TOTAL</th></tr>`;
+        thead.innerHTML = `<tr><th>👤 PILOTO</th>${Array.from({length:DIAS},(_,i)=>`<th>${String(i+1).padStart(2,'0')}</th>`).join('')}<th>⭐ TOTAL</th>`;
         
         const tbody = document.getElementById('planilhaBody');
         tbody.innerHTML = '';
@@ -549,30 +650,11 @@ async function carregarDoBackend() {
                     inp.placeholder = '0,0';
                     
                     const status = ESCALA_MENSAL[p.name]?.[i] || "";
+                    const statusClass = getStatusClass(status);
                     
-                    if (status === "FS") {
+                    if (statusClass) {
                         inp.disabled = true;
-                        inp.classList.add("status-fs");
-                        inp.value = "FS";
-                    } else if (status === "FR") {
-                        inp.disabled = true;
-                        inp.classList.add("status-fr");
-                        inp.value = "FR";
-                    } else if (status === "FE") {
-                        inp.disabled = true;
-                        inp.classList.add("status-fe");
-                        inp.value = "FE";
-                    } else if (status === "DM") {
-                        inp.disabled = true;
-                        inp.classList.add("status-dm");
-                        inp.value = "DM";
-                    } else if (status === "EA") {
-                        inp.disabled = true;
-                        inp.classList.add("status-ea");
-                        inp.value = "EA";
-                    } else if (status === "CM" || status === "TR" || status === "TN" || status === "CQ") {
-                        inp.disabled = true;
-                        inp.classList.add("status-outro");
+                        inp.classList.add(statusClass);
                         inp.value = status;
                     } else {
                         const valor = logs[p.name]?.[i+1] || 0;
@@ -581,14 +663,14 @@ async function carregarDoBackend() {
                     }
                     
                     inp.addEventListener('input', function() { 
-                        if ((diaEditandoIndex !== null || isEditing) && this.value !== "FS" && this.value !== "FR" && this.value !== "FE" && this.value !== "DM" && this.value !== "EA") { 
+                        if ((diaEditandoIndex !== null || isEditing) && !this.disabled) { 
                             atualizarTotalLinha(row); 
                             recalcularTudo(); 
                             if(isEditing && password) salvarNoBackend(); 
                         } 
                     });
                     inp.addEventListener('blur', function() { 
-                        if ((diaEditandoIndex !== null || isEditing) && this.value !== "FS" && this.value !== "FR" && this.value !== "FE" && this.value !== "DM" && this.value !== "EA") { 
+                        if ((diaEditandoIndex !== null || isEditing) && !this.disabled) { 
                             let v = parseHora(this.value); 
                             this.value = formatarHora(v); 
                             atualizarTotalLinha(row); 
@@ -619,7 +701,7 @@ async function salvarNoBackend() {
         const nome = row.cells[0].innerText.trim();
         logs[nome] = {};
         row.querySelectorAll('.input-hora').forEach((inp, i) => {
-            if (!inp.disabled && inp.value !== "FS" && inp.value !== "FR" && inp.value !== "FE" && inp.value !== "DM" && inp.value !== "EA") {
+            if (!inp.disabled && !inp.classList.contains("status-fr") && !inp.classList.contains("status-fs") && !inp.classList.contains("status-fe") && !inp.classList.contains("status-dm") && !inp.classList.contains("status-ea")) {
                 const val = parseHora(inp.value);
                 if (val > 0) logs[nome][i+1] = val;
             }
@@ -763,7 +845,7 @@ function bloquear() {
         password = "";
         sairEdicaoDia();
         document.querySelectorAll('.input-hora').forEach(inp => {
-            if (inp.value !== "FS" && inp.value !== "FR" && inp.value !== "FE" && inp.value !== "DM" && inp.value !== "EA") {
+            if (!inp.classList.contains("status-fr") && !inp.classList.contains("status-fs") && !inp.classList.contains("status-fe") && !inp.classList.contains("status-dm") && !inp.classList.contains("status-ea")) {
                 inp.disabled = true;
             }
         });
@@ -779,7 +861,7 @@ function limpar() {
     if (!isEditing) return alert("Desbloqueie primeiro.");
     if (confirm("Limpar todos os valores?")) {
         document.querySelectorAll('.input-hora').forEach(inp => {
-            if (inp.value !== "FS" && inp.value !== "FR" && inp.value !== "FE" && inp.value !== "DM" && inp.value !== "EA") {
+            if (!inp.classList.contains("status-fr") && !inp.classList.contains("status-fs") && !inp.classList.contains("status-fe") && !inp.classList.contains("status-dm") && !inp.classList.contains("status-ea")) {
                 inp.value = '0,0';
             }
         });
@@ -796,4 +878,4 @@ document.getElementById('btnSairDia').onclick = sairEdicaoDia;
 carregarDoBackend();
 </script>
 </body>
-    </html>
+                    </html>
