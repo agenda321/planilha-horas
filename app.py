@@ -18,11 +18,24 @@ db = SQLAlchemy(app)
 EDIT_PASSWORD = os.environ.get("EDIT_PASSWORD", "Emerson")
 EDIT_PASSWORD_2 = os.environ.get("EDIT_PASSWORD_2", "Bispo")
 
-CODIGOS_DISPONIVEIS = ["VO", "CQ", "RE", "SO"]
+# ===== DIRETRIZES DA ESCALA VOARE =====
+# Códigos que indicam que o piloto está apto/disponível para voar ou ser acionado
+CODIGOS_DISPONIVEIS = ["VO", "CQ", "RE", "SO", "EA", "TR", "TN"]
+
+# Legenda completa de cores mapeada com a realidade operacional da Voare
 CORES = {
-    "DM": "laranja", "CM": "laranja_claro", "VO": "azul", "EA": "amarelo",
-    "FR": "verde", "FS": "vermelho", "FE": "verde_claro", "RE": "rosa",
-    "SO": "branco", "TR": "amarelo_escuro", "TN": "azul_claro", "CQ": "azul_medio"
+    "DM": "laranja",          # Dispensa Médica (Bloqueado)
+    "CM": "laranja_claro",    # Revalidação do CMA (Bloqueado)
+    "VO": "azul",             # Em Voo (Disponível)
+    "EA": "amarelo",          # Expediente Administrativo (Disponível)
+    "FR": "verde",            # Folga Regular (Bloqueado)
+    "FS": "vermelho",         # Folga Social (Bloqueado)
+    "FE": "verde_claro",      # Férias (Bloqueado)
+    "RE": "rosa",             # Reserva na Empresa (Disponível)
+    "SO": "branco",           # Sobreaviso (Disponível)
+    "TR": "amarelo_escuro",   # Treinamento de Solo (Disponível)
+    "TN": "azul_claro",       # Treinamento de Voo (Disponível)
+    "CQ": "azul_medio"        # Voo de Cheque (Disponível)
 }
 
 # ===== MODELOS DO BANCO DE DADOS =====
@@ -46,7 +59,7 @@ def normalizar_status(status):
         return "VO"
     return status
 
-# ===== FUNÇÃO AUXILIAR: CALCULA DESLOCAMENTO DINÂMICO DE FOLGAS =====
+# ===== FUNÇÃO AUXILIAR: CALCULA DESLOCAMENTO DINÂMICO DE FOLGAS REGULARES (FR) =====
 def obtener_escala_dinamica(pilot_obj, month, year):
     escala = list(ESCALA_MENSAL.get(pilot_obj.name, []))
     if not escala:
@@ -58,13 +71,15 @@ def obtener_escala_dinamica(pilot_obj, month, year):
     limite = min(10, len(escala))
     for i in range(limite):
         dia_num = i + 1
+        # Se o comandante voou num dia mapeado como Folga Regular (FR)
         if dia_num in dias_com_horas and escala[i] == "FR":
             sub_idx = i + 1
             while sub_idx < len(escala):
                 sub_dia_num = sub_idx + 1
+                # Procura o próximo Sobreaviso (SO) livre para empurrar a folga (FR)
                 if escala[sub_idx] == "SO" and sub_dia_num not in dias_com_horas:
-                    escala[i] = "SO"
-                    escala[sub_idx] = "FR"
+                    escala[i] = "SO"   # O dia trabalhado vira "Sobreaviso" no histórico visual
+                    escala[sub_idx] = "FR" # A folga de direito pula para cá
                     break
                 sub_idx += 1
     return escala
@@ -99,6 +114,7 @@ def get_data():
 
     return jsonify(result)
 
+# ===== ROTA ATUALIZADA: SALVA E TRATA CAIXAS VAZIAS COMO 0.0 =====
 @app.route("/api/data", methods=["POST"])
 def save_data():
     data = request.get_json()
@@ -113,20 +129,31 @@ def save_data():
             continue
         for day_str, hours in days.items():
             day = int(day_str)
+            
+            # Se a caixa for deixada em branco, enviada vazia ou nula, o sistema converte para 0.0
+            if hours is None or str(hours).strip() == "":
+                valor_horas = 0.0
+            else:
+                try:
+                    valor_horas = float(hours)
+                except ValueError:
+                    valor_horas = 0.0
+
             log = FlightLog.query.filter_by(
                 pilot_id=pilot.id, day=day, month=month, year=year
             ).first()
+            
             if log:
-                log.hours = float(hours)
+                log.hours = valor_horas
             else:
                 db.session.add(FlightLog(
-                    pilot_id=pilot.id, day=day, month=month, year=year, hours=float(hours)
+                    pilot_id=pilot.id, day=day, month=month, year=year, hours=valor_horas
                 ))
 
     db.session.commit()
     return jsonify({"success": True})
 
-# ===== ROTA ATUALIZADA: DISPONÍVEIS ORDENADOS POR HORAS ACUMULADAS ATÉ O DIA =====
+# ===== ROTA: DISPONÍVEIS FILTRADOS OPERACIONALMENTE E ORDENADOS POR HORAS ACUMULADAS =====
 @app.route("/api/available_commanders/<int:day_index>", methods=["GET"])
 def get_available_commanders(day_index):
     pilotos_com_horas = {"CESSNA 206/210": [], "CARAVAN": [], "COPILOTO": []}
@@ -135,6 +162,7 @@ def get_available_commanders(day_index):
     dia_solicitado = day_index + 1 
 
     for pilot in pilots:
+        # Puxa a escala dinâmica (que recalcula a posição de FR e SO automaticamente)
         escala = obtener_escala_dinamica(pilot, month, year)
         if not escala:
             escala = ESCALA_MENSAL.get(pilot.name, [])
@@ -147,26 +175,27 @@ def get_available_commanders(day_index):
             status = "VO"
             cor = "azul"
 
+        # Filtra apenas se o código estiver na nossa lista de disponíveis ativos/prontidão
         if status in CODIGOS_DISPONIVEIS:
             logs = FlightLog.query.filter_by(pilot_id=pilot.id, month=month, year=year).all()
-            # Soma as horas realizadas do dia 1 até o dia clicado
+            # Soma as horas acumuladas do dia 1 até o dia clicado
             horas_acumuladas = sum(log.hours for log in logs if log.day <= dia_solicitado)
 
             pilotos_com_horas[pilot.group].append({
                 "name": pilot.full_name or pilot.name,
                 "status": status,
                 "color": cor,
-                "horas_totais": horas_acumuladas
+                "horas_totais": hours_acumuladas
             })
 
-    # Ordena do piloto com MAIS horas acumuladas para o que tem MENOS
+    # Faz a ordenação inteligente: quem tem MAIS horas no mês até aquele dia assume o topo da lista
     available = {}
     for grupo, lista_pilotos in pilotos_com_horas.items():
         available[grupo] = sorted(lista_pilotos, key=lambda x: x["horas_totais"], reverse=True)
 
     return jsonify(available)
 
-# ===== ROTA DE REINICIALIZAÇÃO PARA CARGAR DADOS DA PLANILHA =====
+# ===== ROTA DE REINICIALIZAÇÃO PARA CARGAR DADOS DA PLANILHA FOTO =====
 @app.route("/api/debug/reset-banco")
 def reset_banco():
     db.drop_all()
@@ -218,12 +247,12 @@ def povoar_dados_iniciais():
         "Tiago": "Tiago Pinto Quirino"
     }
 
-    for nome, grupo in grupos.items():
-        piloto = Pilot(name=nome, full_name=nomes_completos.get(nome, nome), group=grupo)
+    for nome, group in grupos.items():
+        piloto = Pilot(name=nome, full_name=nomes_completos.get(nome, nome), group=group)
         db.session.add(piloto)
     db.session.commit()
 
-    # Horas extraídas da imagem 1000501597.jpg
+    # Horas extraídas da planilha da foto
     m_atual, y_atual = datetime.now().month, datetime.now().year
     dados_foto = {
         "Andrade": {1: 3.4, 2: 6.4, 3: 2.9, 5: 5.9, 6: 7.9, 7: 8.0, 9: 6.8},
