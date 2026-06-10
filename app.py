@@ -130,7 +130,7 @@ def save_data():
         for day_str, hours in days.items():
             day = int(day_str)
             
-            # Se a caixa for deixada em branco, enviada vazia ou nula, o sistema converte para 0.0
+            # Se a caixa for deixada em branco ou apagada, converte para 0.0
             if hours is None or str(hours).strip() == "":
                 valor_horas = 0.0
             else:
@@ -185,7 +185,7 @@ def get_available_commanders(day_index):
                 "name": pilot.full_name or pilot.name,
                 "status": status,
                 "color": cor,
-                "horas_totais": hours_acumuladas
+                "horas_totais": horas_acumuladas
             })
 
     # Faz a ordenação inteligente: quem tem MAIS horas no mês até aquele dia assume o topo da lista
@@ -229,10 +229,12 @@ def povoar_dados_iniciais():
         "Frank": "Franker Wendell Dias", "Gabriel": "Gabriel de Oliveira",
         "Costa": "Costa", "Hazafe": "Hazafe Pacheco de Alencar",
         "Amarildo": "Joao Amarildo Reis", "Igorh": "Igorh Coutinho Martins",
-        "Joao": "Joao Marcus Oliveira", "Dayvid": "Jose Deyvid Monteiro",
+        "Joao": "Joao Marcus Oliveira", 
+        "Dayvid": "Jose Deyvid Monteiro",      # Alinhado com a chave do banco
         "Leandro": "Leandro Magalhães", "Lindomar": "Lindomar Bras Mota",
         "Lucas": "Lucas Alves Pereira", "Luiz": "Luiz Andrade",
-        "Mathias": "Matias Pires de Campos", "Milton": "Milton Braga de Souza",
+        "Mathias": "Mathias Pires de Campos",  # Corrigido Mathias com 'th'
+        "Milton": "Milton Braga de Souza",
         "Pascoal": "Pascoal Brito de Araujo", "Paulo": "Paulo Andre Silva",
         "Perisson": "Perisson Parmigiani", "Renan": "Renan da Silva Nascimento",
         "Roberto": "Roberto Adolfo Boesing", "Ronie": "Ronie Welter",
@@ -252,14 +254,14 @@ def povoar_dados_iniciais():
         db.session.add(piloto)
     db.session.commit()
 
-    # Horas extraídas da planilha da foto
+    # Horas extraídas da planilha da foto - Corrigido chaves de Dayvid e Mathias
     m_atual, y_atual = datetime.now().month, datetime.now().year
     dados_foto = {
         "Andrade": {1: 3.4, 2: 6.4, 3: 2.9, 5: 5.9, 6: 7.9, 7: 8.0, 9: 6.8},
         "Amarildo": {1: 5.6, 2: 4.7, 3: 4.8, 4: 6.6, 5: 0.0, 7: 4.9, 8: 4.5},
         "Cleverson": {1: 6.2, 2: 5.9, 4: 7.5, 5: 3.6, 6: 4.8, 7: 8.5},
         "Hazafe": {3: 3.6, 4: 6.7, 8: 8.1},
-        "Dayvid": {3: 5.5, 4: 7.5, 8: 7.1},
+        "Dayvid": {3: 5.5, 4: 7.5, 8: 7.1},    # Alinhado para 'Dayvid' com 'y'
         "Edson": {1: 6.5, 2: 3.2, 3: 5.3, 4: 6.3, 5: 0.0, 6: 4.3, 8: 7.4, 9: 3.4},
         "Frank": {1: 7.0, 2: 7.2, 4: 6.7, 5: 8.0, 7: 8.0},
         "Gabriel": {1: 5.8, 3: 7.5, 5: 5.4, 6: 2.5, 7: 8.8, 8: 7.2},
@@ -278,7 +280,7 @@ def povoar_dados_iniciais():
         "Bento": {8: 6.2, 9: 6.8},
         "Costa": {1: 3.7, 2: 3.0, 5: 6.6, 6: 2.2, 8: 5.0},
         "Vitor": {2: 7.2, 5: 6.6, 6: 6.2, 7: 8.0},
-        "Mathias": {3: 5.2, 4: 6.5, 8: 6.2},
+        "Mathias": {3: 5.2, 4: 6.5, 8: 6.2},  # Alinhado para 'Mathias' com 'th'
         "Cleiton": {2: 4.6, 3: 6.2},
         "Joao": {2: 3.0, 5: 6.3, 7: 6.6},
         "Pascoal": {6: 2.8},
