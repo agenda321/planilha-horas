@@ -127,6 +127,8 @@
         .input-hora::placeholder { color: #aaa; font-style: italic; font-size: 0.7rem; }
         .input-hora.has-value { background: #fff1b5; border-color: #e4b149; box-shadow: 0 0 6px gold; }
         .input-hora.streak-day { background: #ffcc99; border-color: #e67300; }
+        
+        /* Cores para diferentes status (apenas visuais, não bloqueiam) */
         .input-hora.status-dm, .input-hora.status-cm { background: #ffb366; border-color: #cc5200; color: #662200; font-weight: bold; }
         .input-hora.status-vo, .input-hora.status-cq, .input-hora.status-tn { background: #99ccff; border-color: #0066cc; color: #003366; font-weight: bold; }
         .input-hora.status-ea, .input-hora.status-tr { background: #ffff99; border-color: #cccc00; color: #666600; font-weight: bold; }
@@ -135,6 +137,7 @@
         .input-hora.status-fe { background: #ccffcc; border-color: #00cc00; color: #006600; font-weight: bold; }
         .input-hora.status-re { background: #ffccff; border-color: #cc66cc; color: #660066; font-weight: bold; }
         .input-hora.status-so { background: #ffffff; border-color: #999999; color: #333333; font-weight: bold; }
+
         .total-cell { background: #e7dbbc; font-weight: bold; }
         .group-title-row td {
             background: linear-gradient(135deg, #ccaa7a, #b1834d);
@@ -279,7 +282,7 @@
                 <span class="legenda-item" style="background:#ccffcc;">FE = Verde Claro</span>
                 <span class="legenda-item" style="background:#ffccff;">RE = Rosa</span>
                 <span class="legenda-item" style="background:#ffffff;">SO = Branco</span>
-                <span><i class="fas fa-chart-simple"></i> Toque no dia → ver | Toque longo → disponíveis | Editar → desbloquear primeiro</span>
+                <span><i class="fas fa-edit"></i> Edição total | Toque no dia → editar | Toque longo → disponíveis</span>
             </div>
             <div class="status-chip" id="editModeChip">📖 MODO VISUALIZAÇÃO</div>
         </div>
@@ -301,7 +304,7 @@ function showToast(msg, duracao = 2500) {
     toast._timer = setTimeout(() => toast.classList.remove('show'), duracao);
 }
 
-// ======================== ESCALA MENSAL ========================
+// ======================== ESCALA MENSAL (APENAS PARA VISUALIZAÇÃO INICIAL) ========================
 const ESCALA_MENSAL = {
     "Adelio": ["FE","FE","FE","FE","FE","FE","FE","FE","SO","SO","SO","FS","FS","FS","RE","SO","FR","SO","SO","FR","SO","SO","FR","SO","SO","FR","SO","SO","SO","FR"],
     "Otto": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO"],
@@ -348,12 +351,6 @@ const ESCALA_MENSAL = {
     "Leandro": ["SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
     "Dany": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR"],
     "Felipe": ["SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"]
-};
-
-// Mapeamento de nomes (front-end -> back-end para escala)
-const MAPEAMENTO_NOMES = {
-    "Dayvid": "Dayvid",   // já está correto
-    "Mathias": "Mathias"  // já está correto
 };
 
 const GRUPOS_PILOTO = {
@@ -405,7 +402,8 @@ function getStatusClass(status) {
 }
 
 function isStatusBloqueado(status) {
-    return ["DM","CM","EA","FR","FS","FE","TR","TN","CQ","RE"].includes(status);
+    // OPÇÃO C: Nenhum status é bloqueado - tudo editável
+    return false;
 }
 
 function getNomeFromRow(row) { 
@@ -418,34 +416,6 @@ function getColIndex(inp) {
 
 function calcularEscalaComFolgasDeslocadas() {
     let escalaTemporaria = JSON.parse(JSON.stringify(ESCALA_MENSAL));
-    
-    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const nome = getNomeFromRow(row);
-        if (!escalaTemporaria[nome]) return;
-
-        for (let i = 0; i < 10; i++) {
-            const inp = row.cells[i+1]?.querySelector('.input-hora');
-            const temHoras = inp ? parseHora(inp.value) > 0 : false;
-
-            if (temHoras && escalaTemporaria[nome][i] === "FR") {
-                let subIdx = i + 1;
-                let deslocado = false;
-
-                while (subIdx < DIAS && !deslocado) {
-                    const subInp = row.cells[subIdx+1]?.querySelector('.input-hora');
-                    const subTemHoras = subInp ? parseHora(subInp.value) > 0 : false;
-                    const subStatus = escalaTemporaria[nome][subIdx];
-
-                    if (subStatus === "SO" && !subTemHoras) {
-                        escalaTemporaria[nome][i] = "SO";
-                        escalaTemporaria[nome][subIdx] = "FR";
-                        deslocado = true;
-                    }
-                    subIdx++;
-                }
-            }
-        }
-    });
     return escalaTemporaria;
 }
 
@@ -466,19 +436,11 @@ function atualizarClassesEBloqueiosCelulas() {
                 inp.classList.add(getStatusClass(statusAtualizado));
             }
 
-            if (isStatusBloqueado(statusAtualizado)) {
-                inp.disabled = true;
-                if (statusAtualizado === "FR" && parseHora(inp.value) === 0) {
-                    inp.value = "FR";
-                }
+            // OPÇÃO C: Todas as células ficam editáveis quando o dia está selecionado
+            if (isEditing && (diaEditandoIndex === null || diaEditandoIndex === i)) {
+                inp.disabled = false;
             } else {
-                if (inp.value === "SO" || inp.value === "FR") inp.value = "";
-                
-                if (isEditing && (diaEditandoIndex === null || diaEditandoIndex === i)) {
-                    inp.disabled = false;
-                } else {
-                    inp.disabled = true;
-                }
+                inp.disabled = true;
             }
         });
     });
@@ -486,13 +448,10 @@ function atualizarClassesEBloqueiosCelulas() {
 
 function atualizarTotalLinha(row) {
     let soma = 0;
-    const nome = getNomeFromRow(row);
-    const escalaDinamica = calcularEscalaComFolgasDeslocadas();
-
-    row.querySelectorAll('.input-hora').forEach((inp, i) => {
-        const status = escalaDinamica[nome]?.[i];
-        if (!isStatusBloqueado(status)) soma += parseHora(inp.value);
-        inp.classList.toggle('has-value', parseHora(inp.value) > 0 && !inp.disabled);
+    row.querySelectorAll('.input-hora').forEach((inp) => {
+        let val = parseHora(inp.value);
+        if (!isNaN(val) && val > 0) soma += val;
+        inp.classList.toggle('has-value', val > 0);
     });
     const totalCell = row.querySelector('.total-cell');
     if (totalCell) totalCell.textContent = formatarHora(soma);
@@ -500,14 +459,11 @@ function atualizarTotalLinha(row) {
 }
 
 function validarStreaks() {
-    const escalaDinamica = calcularEscalaComFolgasDeslocadas();
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const nome = getNomeFromRow(row);
         const inputs = row.querySelectorAll('.input-hora');
-        const vals = Array.from(inputs).map((inp, i) => {
-            const status = escalaDinamica[nome]?.[i];
-            if (isStatusBloqueado(status)) return 0;
-            return parseHora(inp.value) > 0 ? 1 : 0;
+        const vals = Array.from(inputs).map((inp) => {
+            let val = parseHora(inp.value);
+            return val > 0 ? 1 : 0;
         });
         let streak = 0;
         const seq = new Array(DIAS).fill(false);
@@ -539,13 +495,11 @@ function recalcularTudo() {
 
 function totalHorasDia(diaIndex) {
     let soma = 0;
-    const escalaDinamica = calcularEscalaComFolgasDeslocadas();
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const nome = getNomeFromRow(row);
-        const status = escalaDinamica[nome]?.[diaIndex];
-        if (!isStatusBloqueado(status)) {
-            const inp = row.cells[diaIndex+1]?.querySelector('.input-hora');
-            if (inp) soma += parseHora(inp.value);
+        const inp = row.cells[diaIndex+1]?.querySelector('.input-hora');
+        if (inp) {
+            let val = parseHora(inp.value);
+            if (!isNaN(val) && val > 0) soma += val;
         }
     });
     return soma;
@@ -600,19 +554,16 @@ function limparDestaqueColuna() {
     document.querySelectorAll('.col-ativa').forEach(el => el.classList.remove('col-ativa'));
 }
 
-// ======================== MODAL COMPARATIVO CORRIGIDO ========================
 function mostrarComparativoDia(diaIndex) {
     const diaNumero = diaIndex + 1;
     const dadosDia = {};
-    const escalaDinamica = calcularEscalaComFolgasDeslocadas();
     
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const nome = getNomeFromRow(row);
-        const status = escalaDinamica[nome]?.[diaIndex];
+        const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
         let horas = 0;
-        if (!isStatusBloqueado(status)) {
-            const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
-            if (inp) horas = parseHora(inp.value);
+        if (inp) {
+            horas = parseHora(inp.value);
         }
         dadosDia[nome] = horas;
     });
@@ -738,11 +689,10 @@ async function carregarDoBackend() {
                     const valor = logs[p.name]?.[i+1] || 0;
                     if (valor > 0) {
                         inp.value = formatarHora(valor);
-                        inp.classList.add('has-value');
                         total += valor;
                     } else {
                         const statusOriginal = ESCALA_MENSAL[p.name]?.[i] || "";
-                        if (statusOriginal && statusOriginal !== "SO") {
+                        if (statusOriginal) {
                             inp.value = statusOriginal;
                         } else {
                             inp.value = "";
@@ -759,7 +709,11 @@ async function carregarDoBackend() {
                     inp.addEventListener('blur', function() {
                         if ((diaEditandoIndex !== null || isEditing) && !this.disabled) {
                             let v = parseHora(this.value);
-                            this.value = v===0 ? "" : formatarHora(v);
+                            if (v > 0) {
+                                this.value = formatarHora(v);
+                            } else {
+                                // Mantém o texto digitado (pode ser FR, SO, etc.)
+                            }
                             atualizarTotalLinha(row);
                             recalcularTudo();
                             if (isEditing && password) salvarNoBackend();
@@ -791,16 +745,13 @@ async function salvarNoBackend() {
     const syncSpan = document.getElementById('syncStatus');
     syncSpan.innerHTML = '⏳ Salvando...';
     const logs = {};
-    const escalaDinamica = calcularEscalaComFolgasDeslocadas();
 
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const nome = getNomeFromRow(row);
         logs[nome] = {};
         row.querySelectorAll('.input-hora').forEach((inp, i) => {
-            if (!inp.disabled && !isStatusBloqueado(escalaDinamica[nome]?.[i])) {
-                const val = parseHora(inp.value);
-                if (val > 0) logs[nome][i+1] = val;
-            }
+            const val = parseHora(inp.value);
+            if (val > 0) logs[nome][i+1] = val;
         });
     });
     try {
@@ -884,7 +835,7 @@ async function login() {
         document.getElementById('btnLimpar').disabled = false;
         document.getElementById('btnBloquear').disabled = false;
         recalcularTudo();
-        showToast("✅ Edição ativada! Toque num dia para editar.");
+        showToast("✅ Edição ativada! Toque num dia para editar qualquer célula.");
     } else if (senha !== null) {
         showToast("❌ Senha incorreta.");
     }
@@ -906,12 +857,8 @@ function bloquear() {
 function limpar() {
     if (!isEditing) return showToast("⚠️ Desbloqueie primeiro.");
     if (confirm("Limpar todos os valores?")) {
-        const escalaDinamica = calcularEscalaComFolgasDeslocadas();
         document.querySelectorAll('.input-hora').forEach(inp => {
-            const row = inp.closest('tr');
-            if (!isStatusBloqueado(escalaDinamica[getNomeFromRow(row)]?.[getColIndex(inp)])) {
-                inp.value = '';
-            }
+            inp.value = '';
         });
         recalcularTudo();
         salvarNoBackend();
