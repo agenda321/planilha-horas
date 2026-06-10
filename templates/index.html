@@ -49,7 +49,7 @@
         .mes-editavel {
             background: #f9f2e0; border: 2px solid #c9aa77; border-radius: 60px;
             padding: 6px 16px; font-family: monospace; font-size: 1rem; font-weight: bold;
-            width: 130px; text-align: center;
+            width: 150px; text-align: center;
         }
         .mes-editavel:disabled { background: #e9e0cf; opacity: 0.8; }
         .badge-senha {
@@ -70,13 +70,13 @@
             flex-wrap: wrap; gap: 15px; margin-bottom: 20px;
         }
         .dias-botoes {
-            display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+            display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;
             margin: 16px 20px; padding: 12px; background: #ddcdac;
             border-radius: 40px; box-shadow: inset 0 0 0 2px #fef1cf, inset 0 0 0 4px #c2a570;
         }
         .btn-dia {
             background: radial-gradient(circle at 30% 20%, #f0dc9f, #c29a5e);
-            border: none; font-size: 0.8rem; font-weight: bold; padding: 6px 0;
+            border: none; font-size: 0.8rem; font-weight: bold; padding: 8px 0;
             border-radius: 60px; box-shadow: 0 3px 0 #6b4828; cursor: pointer;
             transition: 0.05s linear; text-align: center; display: flex;
             flex-direction: column; align-items: center; gap: 2px; line-height: 1.2;
@@ -146,7 +146,7 @@
             display: flex; align-items: center; justify-content: center; z-index: 2000;
         }
         .card-senha, .card-detalhe {
-            background: #fdf5e6; border-radius: 48px; width: 90%; max-width: 650px;
+            background: #fdf5e6; border-radius: 48px; width: 90%; max-width: 400px;
             padding: 24px; box-shadow: 0 20px 35px black; max-height: 85vh; overflow-y: auto;
         }
         .card-senha { text-align: center; max-width: 350px; }
@@ -223,17 +223,16 @@
                 <span><i class="fas fa-plane"></i> Caravan</span>
                 <span><i class="fas fa-headset"></i> Copiloto</span>
                 <span><i class="fas fa-exclamation-triangle"></i> 6+ dias consecutivos</span>
-                <span><i class="fas fa-chart-simple"></i> Clique num dia para referência</span>
+                <span><i class="fas fa-chart-simple"></i> Toque rápido → horas | Toque longo → disponíveis</span>
                 <span><i class="fas fa-ban" style="color:#cc0000;"></i> FS = Folga Social</span>
             </div>
-            <button class="btn-skeuo btn-disponiveis" id="btnDisponiveis">👥 CMTES DISPONÍVEIS</button>
             <div class="status-chip" id="editModeChip">📖 MODO VISUALIZAÇÃO</div>
         </div>
     </div>
 </div>
 
 <script>
-// ======================== ESCALA MENSAL (FS = Folga Social) ========================
+// ======================== ESCALA MENSAL ========================
 const ESCALA_MENSAL = {
     "Adelio": ["FE","FE","FE","FE","FE","FE","FE","FE","SO","SO","SO","FS","FS","FS","RE","SO","FR","SO","SO","FR","SO","SO","FR","SO","SO","FR","SO","SO","SO","FR"],
     "Otto": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO"],
@@ -241,7 +240,6 @@ const ESCALA_MENSAL = {
     "Cleiton": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR"],
     "Cleverson": ["SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
     "Edson": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","FR","SO"],
-    "Dany": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR"],
     "Frank": ["FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO"],
     "Gabriel": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO"],
     "Costa": ["SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
@@ -249,10 +247,10 @@ const ESCALA_MENSAL = {
     "Amarildo": ["SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
     "Igorh": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO"],
     "Joao": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO"],
+    "Deyvid": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR"],
     "Lindomar": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
     "Lucas": ["FR","FR","FR","FR","FS","FS","FS","RE","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO","SO"],
     "Luiz": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO"],
-    "Leandro": ["SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
     "Matias": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO"],
     "Milton": ["FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","SO","SO","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
     "Pascoal": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO"],
@@ -277,7 +275,10 @@ const ESCALA_MENSAL = {
     "Ronaldo": ["SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
     "Thales": ["SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
     "Serafim": ["SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","SO","FR","SO","SO"],
-    "Tiago": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"]
+    "Tiago": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
+    "Leandro": ["SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
+    "Dany": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR"],
+    "Felipe": ["SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"]
 };
 
 let DIAS = 30;
@@ -285,6 +286,22 @@ let isEditing = false;
 let diaEditandoIndex = null;
 let diaReferencia = null;
 let password = "";
+let longPressTimer = null;
+
+function diasNoMes(mes) {
+    const m = mes.toLowerCase();
+    if (m === "fevereiro") return 28;
+    if (["abril","junho","setembro","novembro"].includes(m)) return 30;
+    return 31;
+}
+
+function atualizarDias() {
+    const mesInput = document.getElementById('campoMes');
+    let mes = mesInput.value.trim();
+    if (!mes) mes = "Junho";
+    DIAS = diasNoMes(mes);
+    return DIAS;
+}
 
 function parseHora(v) { if (!v) return 0; let n = parseFloat(String(v).trim().replace(',','.')); return isNaN(n) ? 0 : n; }
 function formatarHora(n) { return n.toFixed(1).replace('.',','); }
@@ -329,7 +346,7 @@ function recalcularTudo() {
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => somaGeral += atualizarTotalLinha(row));
     let tfoot = document.getElementById('tfootTotal'); tfoot.innerHTML = '';
     let tr = document.createElement('tr');
-    tr.innerHTML = `<td style="font-weight:bold">🏁 TOTAL GERAL</td>${'<td></td>'.repeat(DIAS)}<td class="total-geral">${formatarHora(somaGeral)}</td>`;
+    tr.innerHTML = `<td style="font-weight:bold">🏁 TOTAL GERAL<\/td>${'<td><\/td>'.repeat(DIAS)}<td class="total-geral">${formatarHora(somaGeral)}<\/td>`;
     tfoot.appendChild(tr);
     validarStreaks();
     atualizarTotaisBotoesDias();
@@ -421,9 +438,9 @@ function mostrarComparativoDia(diaIndex) {
         html += `<h3>${grupo}</h3><p>Média: ${formatarHora(media)} h</p><table class="tabela-detalhe">`;
         lista.forEach(p => {
             const diff = p.horas - media;
-            html += `<tr><td style="text-align:left">${p.nome}</td><td style="color:${p.horas===0?'#aaa':'#000'}">${p.horas===0?'—':formatarHora(p.horas)}</td><td style="color:${diff>=0?'green':'red'}">${diff>=0?'+':''}${formatarHora(diff)}</td></tr>`;
+            html += `<tr><td style="text-align:left">${p.nome}<\/td><td style="color:${p.horas===0?'#aaa':'#000'}">${p.horas===0?'—':formatarHora(p.horas)}<\/td><td style="color:${diff>=0?'green':'red'}">${diff>=0?'+':''}${formatarHora(diff)}<\/td><\/tr>`;
         });
-        html += `</table><hr>`;
+        html += `<\/table><hr>`;
     }
     html += `<button class="btn-fechar" id="fecharDetalhe">Fechar</button></div>`;
     const modal = document.createElement('div'); modal.className = 'modal-detalhe'; modal.innerHTML = html;
@@ -432,7 +449,7 @@ function mostrarComparativoDia(diaIndex) {
     modal.onclick = e => { if (e.target === modal) modal.remove(); };
 }
 
-async function mostrarDisponiveis() {
+async function mostrarDisponiveis(diaReferencia) {
     if (diaReferencia === null) { alert("Selecione um dia de referência clicando em um dos botões."); return; }
     let diaSeguinte = diaReferencia + 1;
     if (diaSeguinte >= DIAS) { alert("Último dia do mês. Não há dia seguinte para consulta."); return; }
@@ -476,7 +493,7 @@ async function carregarDoBackend() {
         for (let grupo of ["CESSNA 206/210", "CARAVAN", "COPILOTO"]) {
             const titleRow = document.createElement('tr');
             titleRow.classList.add('group-title-row');
-            titleRow.innerHTML = `<td colspan="${DIAS+2}"><i class="fas fa-${grupo === "COPILOTO" ? "headset" : "plane"}"></i> ${grupo}</td>`;
+            titleRow.innerHTML = `<td colspan="${DIAS+2}"><i class="fas fa-${grupo === "COPILOTO" ? "headset" : "plane"}"></i> ${grupo}<\/td>`;
             tbody.appendChild(titleRow);
             
             for (let p of grupos[grupo]) {
@@ -493,7 +510,6 @@ async function carregarDoBackend() {
                     inp.classList.add('input-hora');
                     inp.placeholder = '0,0';
                     
-                    // VERIFICA SE É FOLGA SOCIAL (FS)
                     const status = ESCALA_MENSAL[p.name]?.[i] || "";
                     if (status === "FS") {
                         inp.disabled = true;
@@ -564,7 +580,10 @@ function criarBotoesDias() {
         const btn = document.createElement('button');
         btn.classList.add('btn-dia');
         btn.innerHTML = `<span class="dia-num">${String(i+1).padStart(2,'00')}</span><span class="dia-total"></span>`;
+        
+        // Toque rápido (clique) -> mostrar horas
         btn.onclick = () => {
+            if (longPressTimer) clearTimeout(longPressTimer);
             if (diaReferencia !== null) {
                 const btnAntigo = document.querySelector(`.btn-dia[data-dia="${diaReferencia}"]`);
                 if (btnAntigo) btnAntigo.classList.remove('dia-selecionado');
@@ -578,25 +597,84 @@ function criarBotoesDias() {
                 mostrarComparativoDia(i);
             }
         };
+        
+        // Toque longo -> mostrar disponíveis
+        btn.ontouchstart = (e) => {
+            e.preventDefault();
+            longPressTimer = setTimeout(() => {
+                if (diaReferencia !== null) {
+                    const btnAntigo = document.querySelector(`.btn-dia[data-dia="${diaReferencia}"]`);
+                    if (btnAntigo) btnAntigo.classList.remove('dia-selecionado');
+                }
+                diaReferencia = i;
+                btn.classList.add('dia-selecionado');
+                btn.setAttribute('data-dia', i);
+                mostrarDisponiveis(i);
+            }, 500);
+        };
+        
+        btn.ontouchend = () => {
+            if (longPressTimer) clearTimeout(longPressTimer);
+        };
+        
+        // Para mouse (clique direito)
+        btn.oncontextmenu = (e) => {
+            e.preventDefault();
+            if (diaReferencia !== null) {
+                const btnAntigo = document.querySelector(`.btn-dia[data-dia="${diaReferencia}"]`);
+                if (btnAntigo) btnAntigo.classList.remove('dia-selecionado');
+            }
+            diaReferencia = i;
+            btn.classList.add('dia-selecionado');
+            btn.setAttribute('data-dia', i);
+            mostrarDisponiveis(i);
+            return false;
+        };
+        
         container.appendChild(btn);
     }
     atualizarTotaisBotoesDias();
 }
 
+// Modal de senha estilizado
+function exibirModalSenha() {
+    return new Promise((resolve) => {
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'modal-senha';
+        modalDiv.innerHTML = `
+            <div class="card-senha">
+                <h3>🔐 AUTENTICAÇÃO</h3>
+                <p>Digite a senha para editar:</p>
+                <input type="password" id="senhaInput" placeholder="Senha" autocomplete="off">
+                <div class="botoes-senha">
+                    <button class="btn-modal" id="confirmarSenha">Confirmar</button>
+                    <button class="btn-modal" id="cancelarSenha">Cancelar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+        const inputSenha = modalDiv.querySelector('#senhaInput');
+        const confirmar = () => { const s = inputSenha.value; modalDiv.remove(); resolve(s); };
+        const cancelar = () => { modalDiv.remove(); resolve(null); };
+        modalDiv.querySelector('#confirmarSenha').onclick = confirmar;
+        modalDiv.querySelector('#cancelarSenha').onclick = cancelar;
+        inputSenha.focus();
+        inputSenha.addEventListener('keypress', (e) => { if (e.key === 'Enter') confirmar(); });
+    });
+}
+
 async function login() {
-    const p = prompt("Digite a senha:");
-    try {
-        const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: p }) });
-        if (res.ok) {
-            password = p;
-            isEditing = true;
-            document.getElementById('statusBadge').innerHTML = '🔓 EDIÇÃO ATIVA';
-            document.getElementById('editModeChip').innerHTML = '✏️ EDIÇÃO ATIVO';
-            document.getElementById('btnLimpar').disabled = false;
-            document.getElementById('btnBloquear').disabled = false;
-            alert("✅ Modo edição ativado. Clique em um dia para editar apenas aquela coluna.");
-        } else { alert("❌ Senha incorreta."); }
-    } catch(e) { alert("Erro de conexão"); }
+    if (isEditing) { alert("Já está editando."); return; }
+    const senha = await exibirModalSenha();
+    if (senha === "Emerson" || senha === "Bispo") {
+        password = senha;
+        isEditing = true;
+        document.getElementById('statusBadge').innerHTML = '🔓 EDIÇÃO ATIVA';
+        document.getElementById('editModeChip').innerHTML = '✏️ EDIÇÃO ATIVO';
+        document.getElementById('btnLimpar').disabled = false;
+        document.getElementById('btnBloquear').disabled = false;
+        alert("✅ Modo edição ativado. Clique em um dia para editar apenas aquela coluna.");
+    } else if (senha !== null) { alert("❌ Senha incorreta."); }
 }
 
 function bloquear() {
@@ -631,9 +709,8 @@ document.getElementById('btnDesbloquear').onclick = login;
 document.getElementById('btnBloquear').onclick = bloquear;
 document.getElementById('btnLimpar').onclick = limpar;
 document.getElementById('btnSairDia').onclick = sairEdicaoDia;
-document.getElementById('btnDisponiveis').onclick = mostrarDisponiveis;
 
 carregarDoBackend();
 </script>
 </body>
-    </html>
+                                           </html>
