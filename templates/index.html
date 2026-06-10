@@ -81,8 +81,6 @@
             padding: 0 20px; display: flex; justify-content: space-between;
             flex-wrap: wrap; gap: 15px; margin-bottom: 20px;
         }
-
-        /* ===== BOTÕES DOS DIAS - CORRIGIDO ===== */
         .dias-botoes {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -126,14 +124,12 @@
             background: radial-gradient(circle at 30% 20%, #a5d6a5, #6f9e6f);
             box-shadow: 0 3px 0 #3e6b3e;
         }
-
         @media (max-width: 480px) {
             .dias-botoes { gap: 4px; padding: 8px; margin: 12px 8px; width: calc(100% - 16px); }
             .btn-dia { font-size: 0.65rem; padding: 6px 0; }
             .btn-dia .dia-num { font-size: 0.65rem; }
             .btn-dia .dia-total { font-size: 0.5rem; }
         }
-
         .table-wrapper {
             overflow-x: auto;
             margin: 20px 12px;
@@ -169,7 +165,6 @@
         }
         .planilha th.col-ativa { background: linear-gradient(to bottom, #e6a800, #a07000) !important; }
         .planilha td.col-ativa { background: #fffacc !important; }
-
         .input-hora {
             width: 70px;
             padding: 6px;
@@ -183,7 +178,6 @@
         .input-hora::placeholder { color: #aaa; font-style: italic; font-size: 0.7rem; }
         .input-hora.has-value { background: #fff1b5; border-color: #e4b149; box-shadow: 0 0 6px gold; }
         .input-hora.streak-day { background: #ffcc99; border-color: #e67300; }
-
         .input-hora.status-dm, .input-hora.status-cm { background: #ffb366; border-color: #cc5200; color: #662200; font-weight: bold; }
         .input-hora.status-vo, .input-hora.status-cq, .input-hora.status-tn { background: #99ccff; border-color: #0066cc; color: #003366; font-weight: bold; }
         .input-hora.status-ea, .input-hora.status-tr { background: #ffff99; border-color: #cccc00; color: #666600; font-weight: bold; }
@@ -192,7 +186,6 @@
         .input-hora.status-fe { background: #ccffcc; border-color: #00cc00; color: #006600; font-weight: bold; }
         .input-hora.status-re { background: #ffccff; border-color: #cc66cc; color: #660066; font-weight: bold; }
         .input-hora.status-so { background: #ffffff; border-color: #999999; color: #333333; font-weight: bold; }
-
         .total-cell { background: #e7dbbc; font-weight: bold; }
         .group-title-row td {
             background: linear-gradient(135deg, #ccaa7a, #b1834d);
@@ -234,8 +227,6 @@
             color: #ffe1a0;
             box-shadow: inset 0 1px 3px #ffdf9a, 0 2px 4px black;
         }
-
-        /* ===== SYNC STATUS - ADICIONADO ===== */
         .sync-bar {
             display: flex;
             justify-content: flex-end;
@@ -248,7 +239,6 @@
             border-radius: 60px;
             color: #ffe1a0;
         }
-
         .modal-senha, .modal-detalhe {
             position: fixed;
             top: 0; left: 0;
@@ -314,8 +304,6 @@
             display: none;
         }
         .badge-dia-edicao.visivel { display: inline-block; }
-
-        /* Barra de progresso comparativo */
         .progress-bar-wrap { background: #e0cfa8; border-radius: 20px; height: 10px; width: 100%; margin-top: 4px; }
         .progress-bar-fill { height: 10px; border-radius: 20px; background: linear-gradient(to right, #e6a800, #a07000); }
     </style>
@@ -341,14 +329,10 @@
                 <button class="btn-skeuo" id="btnSairDia" style="display:none">✖ SAIR DO DIA</button>
             </div>
         </div>
-
-        <!-- SYNC STATUS - CORRIGIDO (elemento agora existe no HTML) -->
         <div class="sync-bar">
             <span class="sync-status" id="syncStatus">💾 Sincronizado</span>
         </div>
-
         <div class="dias-botoes" id="botoesDias"></div>
-
         <div class="table-wrapper">
             <table class="planilha" id="tabelaHoras">
                 <thead id="tableHeader"></thead>
@@ -422,7 +406,6 @@ const ESCALA_MENSAL = {
     "Felipe": ["SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"]
 };
 
-// Mapeamento de grupos centralizado (única fonte de verdade)
 const GRUPOS_PILOTO = {
     "CARAVAN": ["Cleiton","Joao","Pascoal","Lindomar","Perisson","Rui","Yago"],
     "COPILOTO": ["Cauê","Felipe","Ruben","Ernesto","Daniela","Thales","Serafim","Ronaldo","Rodrigo","Tiago"],
@@ -462,9 +445,11 @@ function parseHora(v) {
 function formatarHora(n) { return n.toFixed(1).replace('.',','); }
 
 function getStatusClass(status) {
-    const map = { "DM":"status-dm","CM":"status-cm","VO":"status-vo","EA":"status-ea",
+    const map = {
+        "DM":"status-dm","CM":"status-cm","VO":"status-vo","EA":"status-ea",
         "FR":"status-fr","FS":"status-fs","FE":"status-fe","RE":"status-re",
-        "SO":"status-so","TR":"status-tr","TN":"status-tn","CQ":"status-cq" };
+        "SO":"status-so","TR":"status-tr","TN":"status-tn","CQ":"status-cq"
+    };
     return map[status] || "";
 }
 
@@ -580,9 +565,7 @@ function sairEdicaoDia() {
 function ativarEdicaoDia(diaIndex) {
     if (diaEditandoIndex !== null && diaEditandoIndex !== diaIndex) sairEdicaoDia();
     diaEditandoIndex = diaIndex;
-
     document.querySelectorAll('.input-hora').forEach(inp => inp.disabled = true);
-
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const nome = getNomeFromRow(row);
         const status = ESCALA_MENSAL[nome]?.[diaIndex];
@@ -601,13 +584,9 @@ function ativarEdicaoDia(diaIndex) {
             }
         }
     });
-
     destacarColuna(diaIndex);
-
-    // Auto-scroll para a coluna editada
     const th = document.querySelector(`#tableHeader th:nth-child(${diaIndex + 2})`);
     if (th) th.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-
     const diaNum = String(diaIndex + 1).padStart(2, '0');
     document.getElementById('badgeDiaEdicao').textContent = `✏️ EDITANDO DIA ${diaNum}`;
     document.getElementById('badgeDiaEdicao').classList.add('visivel');
@@ -631,7 +610,6 @@ function limparDestaqueColuna() {
 function mostrarComparativoDia(diaIndex) {
     const diaNumero = diaIndex + 1;
     const gruposMap = { "CESSNA 206/210": [], "CARAVAN": [], "COPILOTO": [] };
-
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const nome = getNomeFromRow(row);
         const status = ESCALA_MENSAL[nome]?.[diaIndex];
@@ -642,9 +620,7 @@ function mostrarComparativoDia(diaIndex) {
         }
         gruposMap[getGrupo(nome)].push({ nome, horas, status });
     });
-
     const maxHoras = Math.max(...Object.values(gruposMap).flat().map(p => p.horas), 0.1);
-
     let html = `<div class="card-detalhe"><h2>📅 Dia ${String(diaNumero).padStart(2,'0')}</h2>`;
     for (let grupo in gruposMap) {
         const lista = gruposMap[grupo].sort((a, b) => b.horas - a.horas);
@@ -657,9 +633,7 @@ function mostrarComparativoDia(diaIndex) {
             const pct = Math.round((p.horas / maxHoras) * 100);
             html += `<tr>
                 <td style="text-align:left;min-width:100px">${p.nome}</td>
-                <td style="min-width:80px">
-                    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
-                </td>
+                <td style="min-width:80px"><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div></td>
                 <td style="color:${p.horas===0?'#aaa':'#000'}">${p.horas===0?p.status||'—':formatarHora(p.horas)}</td>
                 <td style="color:${diff>=0?'green':'red'}">${diff>=0?'+':''}${formatarHora(diff)}</td>
             </tr>`;
@@ -667,7 +641,6 @@ function mostrarComparativoDia(diaIndex) {
         html += `</table><hr>`;
     }
     html += `<button class="btn-fechar" id="fecharDetalhe">Fechar</button></div>`;
-
     const modal = document.createElement('div');
     modal.className = 'modal-detalhe';
     modal.innerHTML = html;
@@ -717,7 +690,7 @@ async function carregarDoBackend() {
         atualizarDias();
 
         const thead = document.getElementById('tableHeader');
-        thead.innerHTML = `<tr><th>👤 PILOTO</th>${Array.from({length:DIAS},(_,i)=>`<th>${String(i+1).padStart(2,'0')}</th>`).join('')}<th>⭐ TOTAL</th></tr>`;
+        thead.innerHTML = `<tr><th>👤 PILOTO</th>${Array.from({length:DIAS},(_,i)=>`<th>${String(i+1).padStart(2,'00')}</th>`).join('')}<th>⭐ TOTAL</th></tr>`;
 
         const tbody = document.getElementById('planilhaBody');
         tbody.innerHTML = '';
@@ -738,6 +711,7 @@ async function carregarDoBackend() {
                 nomeCell.textContent = p.name;
                 row.appendChild(nomeCell);
                 let total = 0;
+
                 for (let i = 0; i < DIAS; i++) {
                     const td = document.createElement('td');
                     const inp = document.createElement('input');
@@ -746,21 +720,36 @@ async function carregarDoBackend() {
                     inp.placeholder = '0,0';
 
                     const status = ESCALA_MENSAL[p.name]?.[i] || "";
-                    const statusClass = getStatusClass(status);
 
-                    if (statusClass) {
+                    // ===== CORREÇÃO: SO trata separado para carregar horas salvas =====
+                    if (status === "SO") {
+                        const valor = logs[p.name]?.[i+1] || 0;
+                        if (valor > 0) {
+                            inp.value = formatarHora(valor);
+                            inp.classList.add('has-value');
+                            total += valor;
+                        } else {
+                            inp.value = "SO";
+                            inp.classList.add("status-so");
+                            inp.disabled = true;
+                        }
+                    } else if (isStatusBloqueado(status)) {
+                        // DM, FR, FS, FE, RE, EA, etc: bloqueado
                         inp.disabled = true;
-                        inp.classList.add(statusClass);
+                        inp.classList.add(getStatusClass(status));
                         inp.value = status;
                     } else {
+                        // VO, CQ, TN: editável com horas
                         const valor = logs[p.name]?.[i+1] || 0;
-                        if (valor !== 0) {
+                        if (valor > 0) {
                             inp.value = formatarHora(valor);
+                            inp.classList.add('has-value');
                             total += valor;
                         } else {
                             inp.value = "";
                         }
                     }
+                    // ===== FIM DA CORREÇÃO =====
 
                     inp.addEventListener('input', function() {
                         if ((diaEditandoIndex !== null || isEditing) && !this.disabled) {
@@ -830,16 +819,13 @@ async function salvarNoBackend() {
 function criarBotoesDias() {
     const container = document.getElementById('botoesDias');
     container.innerHTML = '';
-
     for (let i = 0; i < DIAS; i++) {
         const btn = document.createElement('button');
         btn.classList.add('btn-dia');
         btn.setAttribute('data-dia', i);
-        btn.innerHTML = `<span class="dia-num">${String(i+1).padStart(2,'0')}</span><span class="dia-total"></span>`;
-
+        btn.innerHTML = `<span class="dia-num">${String(i+1).padStart(2,'00')}</span><span class="dia-total"></span>`;
         let touchTimer = null;
         let isLongPress = false;
-
         btn.addEventListener('touchstart', (e) => {
             e.preventDefault();
             isLongPress = false;
@@ -849,7 +835,6 @@ function criarBotoesDias() {
                 mostrarDisponiveis(i);
             }, 500);
         });
-
         btn.addEventListener('touchend', (e) => {
             e.preventDefault();
             if (touchTimer) clearTimeout(touchTimer);
@@ -859,24 +844,20 @@ function criarBotoesDias() {
                 else mostrarComparativoDia(i);
             }
         });
-
         btn.addEventListener('touchcancel', () => {
             if (touchTimer) clearTimeout(touchTimer);
         });
-
         btn.onclick = () => {
             selecionarDia(i, btn);
             if (isEditing) ativarEdicaoDia(i);
             else mostrarComparativoDia(i);
         };
-
         btn.oncontextmenu = (e) => {
             e.preventDefault();
             selecionarDia(i, btn);
             mostrarDisponiveis(i);
             return false;
         };
-
         container.appendChild(btn);
     }
     atualizarTotaisBotoesDias();
@@ -963,4 +944,4 @@ document.getElementById('btnSairDia').onclick = sairEdicaoDia;
 carregarDoBackend();
 </script>
 </body>
-    </html>
+                                                                                    </html>
