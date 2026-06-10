@@ -83,7 +83,7 @@
         }
         .dias-botoes {
             display: grid;
-            grid-template-columns: repeat(7, minmax(50px, 1fr));
+            grid-template-columns: repeat(7, 1fr);
             gap: 8px;
             margin: 16px 20px;
             padding: 12px;
@@ -94,9 +94,9 @@
         .btn-dia {
             background: radial-gradient(circle at 30% 20%, #f0dc9f, #c29a5e);
             border: none;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             font-weight: bold;
-            padding: 8px 0;
+            padding: 10px 0;
             border-radius: 60px;
             box-shadow: 0 3px 0 #6b4828;
             cursor: pointer;
@@ -105,12 +105,15 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             gap: 2px;
             line-height: 1.2;
+            width: 100%;
+            min-width: 45px;
         }
         @media (max-width: 600px) {
-            .dias-botoes { grid-template-columns: repeat(7, minmax(40px, 1fr)); gap: 5px; }
-            .btn-dia { font-size: 0.7rem; padding: 4px 0; }
+            .dias-botoes { gap: 5px; padding: 8px; }
+            .btn-dia { font-size: 0.7rem; padding: 6px 0; min-width: 35px; }
         }
         .btn-dia.dia-selecionado {
             background: radial-gradient(circle at 30% 20%, #ffe066, #e6a800);
@@ -124,7 +127,6 @@
         .btn-dia .dia-num { font-size: 0.9rem; font-weight: bold; }
         .btn-dia .dia-total { font-size: 0.65rem; color: #5a3a10; }
         .btn-dia.tem-dados .dia-total { color: #a05000; font-weight: bold; }
-        }
         .table-wrapper {
             overflow-x: auto;
             margin: 20px 12px;
@@ -151,11 +153,16 @@
             z-index: 5;
             border-right: 2px solid #dbb87a;
         }
-        .planilha th:first-child { position: sticky; left: 0; z-index: 15; background: #9c7a50; }
+        .planilha th:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 15;
+            background: #9c7a50;
+        }
         .planilha th.col-ativa { background: linear-gradient(to bottom, #e6a800, #a07000) !important; }
         .planilha td.col-ativa { background: #fffacc !important; }
 
-        /* ========== CORES DOS STATUS ========== */
+        /* Inputs com placeholder (marca d'água) */
         .input-hora {
             width: 70px;
             padding: 6px;
@@ -166,9 +173,15 @@
             border-radius: 16px;
             transition: all 0.2s;
         }
+        .input-hora::placeholder {
+            color: #aaa;
+            font-style: italic;
+            font-size: 0.7rem;
+        }
         .input-hora.has-value { background: #fff1b5; border-color: #e4b149; box-shadow: 0 0 6px gold; }
         .input-hora.streak-day { background: #ffcc99; border-color: #e67300; }
 
+        /* Cores dos status */
         .input-hora.status-dm, .input-hora.status-cm { background: #ffb366; border-color: #cc5200; color: #662200; font-weight: bold; }
         .input-hora.status-vo, .input-hora.status-cq, .input-hora.status-tn { background: #99ccff; border-color: #0066cc; color: #003366; font-weight: bold; }
         .input-hora.status-ea, .input-hora.status-tr { background: #ffff99; border-color: #cccc00; color: #666600; font-weight: bold; }
@@ -648,7 +661,7 @@ async function carregarDoBackend() {
                     const inp = document.createElement('input');
                     inp.type = 'text';
                     inp.classList.add('input-hora');
-                    inp.placeholder = '0,0';
+                    inp.placeholder = '0,0';  // Placeholder (marca d'água)
                     
                     const status = ESCALA_MENSAL[p.name]?.[i] || "";
                     const statusClass = getStatusClass(status);
@@ -659,12 +672,13 @@ async function carregarDoBackend() {
                         inp.value = status;
                     } else {
                         const valor = logs[p.name]?.[i+1] || 0;
-                        inp.value = formatarHora(valor);
-                        total += valor;
+                        inp.value = valor === 0 ? "" : formatarHora(valor);
+                        if (valor !== 0) total += valor;
                     }
                     
                     inp.addEventListener('input', function() { 
                         if ((diaEditandoIndex !== null || isEditing) && !this.disabled) { 
+                            if (this.value === "" || this.value === null) this.value = "0,0";
                             atualizarTotalLinha(row); 
                             recalcularTudo(); 
                             if(isEditing && password) salvarNoBackend(); 
@@ -673,7 +687,7 @@ async function carregarDoBackend() {
                     inp.addEventListener('blur', function() { 
                         if ((diaEditandoIndex !== null || isEditing) && !this.disabled) { 
                             let v = parseHora(this.value); 
-                            this.value = formatarHora(v); 
+                            this.value = v === 0 ? "" : formatarHora(v); 
                             atualizarTotalLinha(row); 
                             recalcularTudo(); 
                             if(isEditing && password) salvarNoBackend();
@@ -863,7 +877,7 @@ function limpar() {
     if (confirm("Limpar todos os valores?")) {
         document.querySelectorAll('.input-hora').forEach(inp => {
             if (!inp.classList.contains("status-fr") && !inp.classList.contains("status-fs") && !inp.classList.contains("status-fe") && !inp.classList.contains("status-dm") && !inp.classList.contains("status-ea")) {
-                inp.value = '0,0';
+                inp.value = '';
             }
         });
         recalcularTudo();
@@ -879,4 +893,4 @@ document.getElementById('btnSairDia').onclick = sairEdicaoDia;
 carregarDoBackend();
 </script>
 </body>
-                    </html>
+    </html>
