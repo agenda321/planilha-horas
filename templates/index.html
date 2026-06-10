@@ -120,7 +120,6 @@
         .planilha th.col-ativa { background: linear-gradient(to bottom, #e6a800, #a07000) !important; }
         .planilha td.col-ativa { background: #fffacc !important; }
         
-        /* Estilo dos inputs */
         .input-hora {
             width: 70px;
             padding: 6px;
@@ -135,8 +134,7 @@
         .input-hora.has-value { background: #fff1b5; border-color: #e4b149; box-shadow: 0 0 6px gold; }
         .input-hora.streak-day { background: #ffcc99; border-color: #e67300; }
 
-        /* ========== SISTEMA DE CORES PERSONALIZÁVEL ========== */
-        /* Você pode alterar as cores abaixo conforme desejar */
+        /* Cores dos status */
         .input-hora[data-status="DM"], .input-hora[data-status="CM"] { background: #ffb366; border-color: #cc5200; color: #662200; font-weight: bold; }
         .input-hora[data-status="VO"], .input-hora[data-status="CQ"], .input-hora[data-status="TN"] { background: #99ccff; border-color: #0066cc; color: #003366; font-weight: bold; }
         .input-hora[data-status="EA"], .input-hora[data-status="TR"] { background: #ffff99; border-color: #cccc00; color: #666600; font-weight: bold; }
@@ -145,7 +143,6 @@
         .input-hora[data-status="FE"] { background: #ccffcc; border-color: #00cc00; color: #006600; font-weight: bold; }
         .input-hora[data-status="RE"] { background: #ffccff; border-color: #cc66cc; color: #660066; font-weight: bold; }
         .input-hora[data-status="SO"] { background: #ffffff; border-color: #999999; color: #333333; font-weight: bold; }
-        /* Cor padrão para textos não reconhecidos */
         .input-hora[data-status="default"] { background: #f9f2e0; border-color: #c9aa77; }
 
         .total-cell { background: #e7dbbc; font-weight: bold; }
@@ -181,7 +178,7 @@
             display: flex; align-items: center; justify-content: center; z-index: 2000;
         }
         .card-senha, .card-detalhe {
-            background: #fdf5e6; border-radius: 48px; width: 90%; max-width: 600px;
+            background: #fdf5e6; border-radius: 48px; width: 90%; max-width: 700px;
             padding: 24px; box-shadow: 0 20px 35px black; max-height: 85vh; overflow-y: auto;
         }
         .card-senha { text-align: center; max-width: 350px; }
@@ -406,19 +403,15 @@ function getStatusFromValue(value) {
     return statusMap[value] || null;
 }
 
-function getNomeFromRow(row) { 
-    return row.cells[0].innerText.trim();
-}
-
-function getColIndex(inp) {
-    return Array.from(inp.parentNode.parentNode.children).indexOf(inp.parentNode) - 1;
-}
+function getNomeFromRow(row) { return row.cells[0].innerText.trim(); }
+function getColIndex(inp) { return Array.from(inp.parentNode.parentNode.children).indexOf(inp.parentNode) - 1; }
 
 function atualizarCorInput(inp) {
     const valor = inp.value.trim();
     const status = getStatusFromValue(valor);
     if (status) {
         inp.setAttribute('data-status', status);
+        inp.classList.remove('has-value');
     } else if (valor !== "" && parseHora(valor) > 0) {
         inp.setAttribute('data-status', '');
         inp.classList.add('has-value');
@@ -502,6 +495,8 @@ function sairEdicaoDia() {
         document.getElementById('btnSairDia').style.display = 'none';
         document.querySelectorAll('.btn-dia').forEach(btn => btn.classList.remove('dia-editando'));
         limparDestaqueColuna();
+        // Re-bloquear todos os inputs
+        document.querySelectorAll('.input-hora').forEach(inp => inp.disabled = true);
         recalcularTudo();
     }
 }
@@ -524,7 +519,6 @@ function ativarEdicaoDia(diaIndex) {
     document.getElementById('badgeDiaEdicao').classList.add('visivel');
     document.getElementById('btnSairDia').style.display = 'inline-block';
     document.querySelectorAll('.btn-dia').forEach((btn,i) => btn.classList.toggle('dia-editando', i===diaIndex));
-    
     showToast(`✏️ Dia ${diaNum} liberado para edição`);
 }
 
@@ -541,6 +535,7 @@ function limparDestaqueColuna() {
     document.querySelectorAll('.col-ativa').forEach(el => el.classList.remove('col-ativa'));
 }
 
+// ======================== MODAL COMPARATIVO CORRIGIDO (apenas tabela) ========================
 function mostrarComparativoDia(diaIndex) {
     const diaNumero = diaIndex + 1;
     const dadosDia = {};
@@ -549,9 +544,7 @@ function mostrarComparativoDia(diaIndex) {
         const nome = getNomeFromRow(row);
         const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
         let horas = 0;
-        if (inp) {
-            horas = parseHora(inp.value);
-        }
+        if (inp) horas = parseHora(inp.value);
         dadosDia[nome] = horas;
     });
     
@@ -587,7 +580,7 @@ function mostrarComparativoDia(diaIndex) {
                 <td style="text-align: center; font-weight: bold;">${p.horas === 0 ? '—' : formatarHora(p.horas)}</strong></td>
                 <td style="text-align: center; color: ${diffColor}; font-weight: bold;">${diffText}</td>
                 <td style="min-width: 120px;"><div class="progress-bar-wrap"><div class="barra-fill" style="width: ${perc}%;"></div></div></td>
-            </td>`;
+            </tr>`;
         });
         
         html += `</tbody>}</div></div><hr style="margin: 20px 0; border-color: #ccb28b;">`;
@@ -687,18 +680,18 @@ async function carregarDoBackend() {
                         }
                     }
                     
-                    // Aplica a cor baseada no valor inicial
                     atualizarCorInput(inp);
+                    inp.disabled = true; // inicialmente bloqueado
 
                     inp.addEventListener('input', function() {
-                        if (diaEditandoIndex !== null || isEditing) {
+                        if (diaEditandoIndex !== null && (diaEditandoIndex === i) && isEditing) {
                             atualizarTotalLinha(row);
                             recalcularTudo();
                             if (isEditing && password) salvarNoBackend();
                         }
                     });
                     inp.addEventListener('blur', function() {
-                        if (diaEditandoIndex !== null || isEditing) {
+                        if (diaEditandoIndex !== null && (diaEditandoIndex === i) && isEditing) {
                             let v = parseHora(this.value);
                             if (v > 0) {
                                 this.value = formatarHora(v);
@@ -719,10 +712,6 @@ async function carregarDoBackend() {
                 tbody.appendChild(row);
             }
         }
-        
-        // Inicialmente desabilita todos os inputs
-        document.querySelectorAll('.input-hora').forEach(inp => inp.disabled = true);
-        
         recalcularTudo();
         criarBotoesDias();
         sairEdicaoDia();
@@ -839,8 +828,6 @@ function bloquear() {
     isEditing = false;
     password = "";
     sairEdicaoDia();
-    // Desabilita todos os inputs
-    document.querySelectorAll('.input-hora').forEach(inp => inp.disabled = true);
     document.getElementById('statusBadge').innerHTML = '🔒 SOMENTE LEITURA';
     document.getElementById('editModeChip').innerHTML = '📖 MODO VISUALIZAÇÃO';
     document.getElementById('btnLimpar').disabled = true;
@@ -868,4 +855,4 @@ document.getElementById('btnSairDia').onclick = sairEdicaoDia;
 carregarDoBackend();
 </script>
 </body>
-    </html>
+                                                                                                </html>
