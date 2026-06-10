@@ -83,7 +83,7 @@
         }
         .dias-botoes {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            grid-template-columns: repeat(7, minmax(55px, 1fr));
             gap: 8px;
             margin: 16px 20px;
             padding: 12px;
@@ -109,11 +109,10 @@
             gap: 2px;
             line-height: 1.2;
             width: 100%;
-            min-width: 45px;
         }
         @media (max-width: 600px) {
-            .dias-botoes { gap: 5px; padding: 8px; }
-            .btn-dia { font-size: 0.7rem; padding: 6px 0; min-width: 35px; }
+            .dias-botoes { gap: 5px; padding: 8px; grid-template-columns: repeat(7, minmax(40px, 1fr)); }
+            .btn-dia { font-size: 0.7rem; padding: 6px 0; }
         }
         .btn-dia.dia-selecionado {
             background: radial-gradient(circle at 30% 20%, #ffe066, #e6a800);
@@ -162,7 +161,6 @@
         .planilha th.col-ativa { background: linear-gradient(to bottom, #e6a800, #a07000) !important; }
         .planilha td.col-ativa { background: #fffacc !important; }
 
-        /* Inputs com placeholder (marca d'água) */
         .input-hora {
             width: 70px;
             padding: 6px;
@@ -181,7 +179,6 @@
         .input-hora.has-value { background: #fff1b5; border-color: #e4b149; box-shadow: 0 0 6px gold; }
         .input-hora.streak-day { background: #ffcc99; border-color: #e67300; }
 
-        /* Cores dos status */
         .input-hora.status-dm, .input-hora.status-cm { background: #ffb366; border-color: #cc5200; color: #662200; font-weight: bold; }
         .input-hora.status-vo, .input-hora.status-cq, .input-hora.status-tn { background: #99ccff; border-color: #0066cc; color: #003366; font-weight: bold; }
         .input-hora.status-ea, .input-hora.status-tr { background: #ffff99; border-color: #cccc00; color: #666600; font-weight: bold; }
@@ -351,7 +348,7 @@
                 <span class="legenda-item" style="background:#ccffcc;">FE = Verde Claro</span>
                 <span class="legenda-item" style="background:#ffccff;">RE = Rosa</span>
                 <span class="legenda-item" style="background:#ffffff;">SO = Branco</span>
-                <span><i class="fas fa-chart-simple"></i> Toque rápido → horas | Toque longo → disponíveis</span>
+                <span><i class="fas fa-chart-simple"></i> Clique no dia → editar | Toque longo → disponíveis</span>
             </div>
             <div class="status-chip" id="editModeChip">📖 MODO VISUALIZAÇÃO</div>
         </div>
@@ -451,11 +448,16 @@ function getStatusClass(status) {
     }
 }
 
+function isStatusBloqueado(status) {
+    const bloqueados = ["DM","CM","EA","FR","FS","FE","TR","TN","CQ"];
+    return bloqueados.includes(status);
+}
+
 function atualizarTotalLinha(row) {
     let inputs = row.querySelectorAll('.input-hora');
     let soma = 0;
     inputs.forEach(inp => { 
-        if (!inp.disabled && !inp.classList.contains("status-fr") && !inp.classList.contains("status-fs") && !inp.classList.contains("status-fe") && !inp.classList.contains("status-dm") && !inp.classList.contains("status-ea")) {
+        if (!inp.disabled && !isStatusBloqueado(ESCALA_MENSAL[row.cells[0].innerText.trim()]?.[Array.from(inp.parentNode.parentNode.children).indexOf(inp.parentNode)-1])) {
             soma += parseHora(inp.value); 
         }
         inp.classList.toggle('has-value', parseHora(inp.value) > 0 && !inp.disabled);
@@ -469,7 +471,8 @@ function validarStreaks() {
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const inputs = row.querySelectorAll('.input-hora');
         const vals = Array.from(inputs).map(inp => {
-            if (inp.disabled || inp.classList.contains("status-fr") || inp.classList.contains("status-fs") || inp.classList.contains("status-fe") || inp.classList.contains("status-dm") || inp.classList.contains("status-ea")) return 0;
+            const status = ESCALA_MENSAL[row.cells[0].innerText.trim()]?.[Array.from(inp.parentNode.parentNode.children).indexOf(inp.parentNode)-1];
+            if (isStatusBloqueado(status)) return 0;
             return parseHora(inp.value) > 0 ? 1 : 0;
         });
         let streak = 0, seq = new Array(DIAS).fill(false);
@@ -500,9 +503,10 @@ function recalcularTudo() {
 function totalHorasDia(diaIndex) {
     let soma = 0;
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
-        if (inp && !inp.disabled && !inp.classList.contains("status-fr") && !inp.classList.contains("status-fs") && !inp.classList.contains("status-fe") && !inp.classList.contains("status-dm") && !inp.classList.contains("status-ea")) {
-            soma += parseHora(inp.value);
+        const status = ESCALA_MENSAL[row.cells[0].innerText.trim()]?.[diaIndex];
+        if (!isStatusBloqueado(status)) {
+            const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
+            if (inp) soma += parseHora(inp.value);
         }
     });
     return soma;
@@ -522,7 +526,7 @@ function sairEdicaoDia() {
     if (diaEditandoIndex !== null) {
         diaEditandoIndex = null;
         document.querySelectorAll('.input-hora').forEach(inp => {
-            if (!inp.disabled && !inp.classList.contains("status-fr") && !inp.classList.contains("status-fs") && !inp.classList.contains("status-fe") && !inp.classList.contains("status-dm") && !inp.classList.contains("status-ea")) {
+            if (!inp.disabled && !isStatusBloqueado(ESCALA_MENSAL[inp.closest('tr').cells[0].innerText.trim()]?.[Array.from(inp.parentNode.parentNode.children).indexOf(inp.parentNode)-1])) {
                 inp.disabled = !isEditing;
             }
         });
@@ -538,9 +542,10 @@ function ativarEdicaoDia(diaIndex) {
     diaEditandoIndex = diaIndex;
     document.querySelectorAll('.input-hora').forEach(inp => inp.disabled = true);
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
-        if (inp && !inp.classList.contains("status-fr") && !inp.classList.contains("status-fs") && !inp.classList.contains("status-fe") && !inp.classList.contains("status-dm") && !inp.classList.contains("status-ea")) {
-            inp.disabled = false;
+        const status = ESCALA_MENSAL[row.cells[0].innerText.trim()]?.[diaIndex];
+        if (!isStatusBloqueado(status)) {
+            const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
+            if (inp) inp.disabled = false;
         }
     });
     destacarColuna(diaIndex);
@@ -568,10 +573,11 @@ function mostrarComparativoDia(diaIndex) {
     const dadosDia = {};
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const nome = row.cells[0].innerText.trim();
-        const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
+        const status = ESCALA_MENSAL[nome]?.[diaIndex];
         let horas = 0;
-        if (inp && !inp.disabled && !inp.classList.contains("status-fr") && !inp.classList.contains("status-fs") && !inp.classList.contains("status-fe") && !inp.classList.contains("status-dm") && !inp.classList.contains("status-ea")) {
-            horas = parseHora(inp.value);
+        if (!isStatusBloqueado(status)) {
+            const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
+            if (inp) horas = parseHora(inp.value);
         }
         dadosDia[nome] = horas;
     });
@@ -661,7 +667,7 @@ async function carregarDoBackend() {
                     const inp = document.createElement('input');
                     inp.type = 'text';
                     inp.classList.add('input-hora');
-                    inp.placeholder = '0,0';  // Placeholder (marca d'água)
+                    inp.placeholder = '0,0';
                     
                     const status = ESCALA_MENSAL[p.name]?.[i] || "";
                     const statusClass = getStatusClass(status);
@@ -678,7 +684,7 @@ async function carregarDoBackend() {
                     
                     inp.addEventListener('input', function() { 
                         if ((diaEditandoIndex !== null || isEditing) && !this.disabled) { 
-                            if (this.value === "" || this.value === null) this.value = "0,0";
+                            if (this.value === "" || this.value === null) this.value = "";
                             atualizarTotalLinha(row); 
                             recalcularTudo(); 
                             if(isEditing && password) salvarNoBackend(); 
@@ -716,7 +722,7 @@ async function salvarNoBackend() {
         const nome = row.cells[0].innerText.trim();
         logs[nome] = {};
         row.querySelectorAll('.input-hora').forEach((inp, i) => {
-            if (!inp.disabled && !inp.classList.contains("status-fr") && !inp.classList.contains("status-fs") && !inp.classList.contains("status-fe") && !inp.classList.contains("status-dm") && !inp.classList.contains("status-ea")) {
+            if (!inp.disabled && !isStatusBloqueado(ESCALA_MENSAL[nome]?.[i])) {
                 const val = parseHora(inp.value);
                 if (val > 0) logs[nome][i+1] = val;
             }
@@ -860,7 +866,7 @@ function bloquear() {
         password = "";
         sairEdicaoDia();
         document.querySelectorAll('.input-hora').forEach(inp => {
-            if (!inp.classList.contains("status-fr") && !inp.classList.contains("status-fs") && !inp.classList.contains("status-fe") && !inp.classList.contains("status-dm") && !inp.classList.contains("status-ea")) {
+            if (!isStatusBloqueado(ESCALA_MENSAL[inp.closest('tr').cells[0].innerText.trim()]?.[Array.from(inp.parentNode.parentNode.children).indexOf(inp.parentNode)-1])) {
                 inp.disabled = true;
             }
         });
@@ -876,7 +882,7 @@ function limpar() {
     if (!isEditing) return alert("Desbloqueie primeiro.");
     if (confirm("Limpar todos os valores?")) {
         document.querySelectorAll('.input-hora').forEach(inp => {
-            if (!inp.classList.contains("status-fr") && !inp.classList.contains("status-fs") && !inp.classList.contains("status-fe") && !inp.classList.contains("status-dm") && !inp.classList.contains("status-ea")) {
+            if (!isStatusBloqueado(ESCALA_MENSAL[inp.closest('tr').cells[0].innerText.trim()]?.[Array.from(inp.parentNode.parentNode.children).indexOf(inp.parentNode)-1])) {
                 inp.value = '';
             }
         });
@@ -893,4 +899,4 @@ document.getElementById('btnSairDia').onclick = sairEdicaoDia;
 carregarDoBackend();
 </script>
 </body>
-    </html>
+</html>
