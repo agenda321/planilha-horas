@@ -1,858 +1,926 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Planilha de Voo | Registro de Horas</title>
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#1a237e">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Planilha Horas">
-    <link rel="apple-touch-icon" href="/icon-192.png">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            margin: 0; min-height: 100vh;
-            background: radial-gradient(circle at 20% 30%, #b87c4f, #6e4a2e);
-            font-family: 'Segoe UI', 'Georgia', serif;
-            padding: 24px 16px;
-            display: flex; justify-content: center; align-items: center;
-        }
-        .skeuo-container {
-            max-width: 1400px; width: 100%;
-            background: #e2d6c0;
-            background-image: repeating-linear-gradient(45deg, #dacaa8 0px, #dacaa8 2px, #efe3c9 2px, #efe3c9 8px);
-            border-radius: 48px;
-            box-shadow: 0 25px 45px rgba(0,0,0,0.5), inset 0 1px 4px rgba(255,255,200,0.8);
-            padding: 20px;
-        }
-        .planilha-card {
-            background: #fcf7e8; border-radius: 32px;
-            box-shadow: inset 0 0 0 2px #fff9e8, inset 0 0 0 6px #d9c894, 0 12px 28px rgba(0,0,0,0.4);
-            padding: 8px 0 12px;
-        }
-        .cabecalho-skeuo {
-            padding: 12px 30px; border-bottom: 3px solid #b28b5e;
-            display: flex; justify-content: space-between; align-items: center;
-            flex-wrap: wrap;
-            background: linear-gradient(to bottom, #fdf5e0, #f4e5ca);
-            border-radius: 28px 28px 18px 18px;
-            margin-bottom: 16px; gap: 15px;
-        }
-        .title-area { display: flex; align-items: baseline; gap: 15px; flex-wrap: wrap; }
-        h1 { font-family: Georgia; font-size: 1.8rem; margin: 0; color: #3b2a1f; text-shadow: 3px 3px 0 #cdb086; }
-        .mes-editavel {
-            background: #f9f2e0; border: 2px solid #c9aa77; border-radius: 60px;
-            padding: 6px 16px; font-family: monospace; font-size: 1rem; font-weight: bold;
-            width: 150px; text-align: center;
-        }
-        .mes-editavel:disabled { background: #e9e0cf; opacity: 0.8; }
-        .badge-senha {
-            background: #b97f4b; border-radius: 60px; padding: 6px 16px;
-            font-size: 0.75rem; font-weight: bold; color: #fff1cf;
-            box-shadow: inset 0 1px 2px #ffdd99, 0 3px 6px rgba(0,0,0,0.2);
-        }
-        .btn-skeuo {
-            background: radial-gradient(circle at 30% 20%, #f3de9f, #cb9e6b);
-            border: none; font-size: 0.85rem; font-weight: bold; padding: 8px 18px;
-            border-radius: 60px; box-shadow: 0 5px 0 #7a4f2c; cursor: pointer; transition: 0.05s linear;
-        }
-        .btn-skeuo:active { transform: translateY(3px); box-shadow: 0 2px 0 #7a4f2c; }
-        .btn-skeuo:disabled { opacity: 0.55; cursor: default; transform: none; }
-        .button-group { display: flex; gap: 12px; flex-wrap: wrap; }
-        .top-actions {
-            padding: 0 20px; display: flex; justify-content: space-between;
-            flex-wrap: wrap; gap: 15px; margin-bottom: 20px;
-        }
-        .dias-botoes {
-            display: grid; grid-template-columns: repeat(7, 1fr);
-            gap: 6px; margin: 16px 12px; padding: 10px;
-            background: #ddcdac; border-radius: 40px;
-            box-shadow: inset 0 0 0 2px #fef1cf, inset 0 0 0 4px #c2a570;
-            width: calc(100% - 24px);
-        }
-        .btn-dia {
-            background: radial-gradient(circle at 30% 20%, #f0dc9f, #c29a5e);
-            border: none; font-size: 0.8rem; font-weight: bold; padding: 8px 0;
-            border-radius: 60px; box-shadow: 0 3px 0 #6b4828; cursor: pointer;
-            transition: 0.05s linear; text-align: center;
-            display: flex; flex-direction: column; align-items: center;
-            justify-content: center; gap: 2px; line-height: 1.2;
-            width: 100%; min-width: 0;
-        }
-        .btn-dia .dia-num { font-size: 0.8rem; font-weight: bold; }
-        .btn-dia .dia-total { font-size: 0.55rem; color: #5a3a10; white-space: nowrap; }
-        .btn-dia.tem-dados .dia-total { color: #a05000; font-weight: bold; }
-        .btn-dia.dia-selecionado {
-            background: radial-gradient(circle at 30% 20%, #ffe066, #e6a800);
-            box-shadow: 0 3px 0 #7a5200, 0 0 10px 3px rgba(230,167,0,0.5);
-            color: #3b2a00;
-        }
-        .btn-dia.dia-editando {
-            background: radial-gradient(circle at 30% 20%, #a5d6a5, #6f9e6f);
-            box-shadow: 0 3px 0 #3e6b3e;
-        }
-        @media (max-width: 480px) {
-            .dias-botoes { gap: 4px; padding: 8px; margin: 12px 8px; width: calc(100% - 16px); }
-            .btn-dia { font-size: 0.65rem; padding: 6px 0; }
-            .btn-dia .dia-num { font-size: 0.65rem; }
-            .btn-dia .dia-total { font-size: 0.55rem; }
-        }
-        .table-wrapper {
-            overflow-x: auto; margin: 20px 12px;
-            background: #ddcdac; padding: 8px; border-radius: 24px;
-            max-height: 60vh; -webkit-overflow-scrolling: touch;
-        }
-        .planilha { width: 100%; border-collapse: collapse; background: #fff6e8; min-width: 1000px; }
-        .planilha th, .planilha td { border: 1px solid #ebddbb; padding: 8px 4px; text-align: center; }
-        .planilha th {
-            background: linear-gradient(to bottom, #b88954, #7e5937);
-            color: #fff4e0; position: sticky; top: 0; z-index: 10;
-        }
-        .planilha td:first-child {
-            background: #f7efdc; font-weight: bold; text-align: left;
-            position: sticky; left: 0; z-index: 5; border-right: 2px solid #dbb87a;
-        }
-        .planilha th:first-child { position: sticky; left: 0; z-index: 15; background: #9c7a50; }
-        .planilha th.col-ativa { background: linear-gradient(to bottom, #e6a800, #a07000) !important; }
-        .planilha td.col-ativa { background: #fffacc !important; }
-        
-        .input-hora {
-            width: 70px;
-            padding: 6px;
-            text-align: center;
-            font-family: monospace;
-            background: #f9f2e0;
-            border: 2px solid #c9aa77;
-            border-radius: 16px;
-            transition: all 0.2s;
-        }
-        .input-hora::placeholder { color: #aaa; font-style: italic; font-size: 0.7rem; }
-        .input-hora.has-value { background: #fff1b5; border-color: #e4b149; box-shadow: 0 0 6px gold; }
-        .input-hora.streak-day { background: #ffcc99; border-color: #e67300; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Programação 13/06/2026</title>
+<style>
+  :root {
+    --bg:        #080F1A;
+    --surface:   #0E1C2F;
+    --card:      #111E33;
+    --card2:     #0C1828;
 
-        /* Cores dos status */
-        .input-hora[data-status="DM"], .input-hora[data-status="CM"] { background: #ffb366; border-color: #cc5200; color: #662200; font-weight: bold; }
-        .input-hora[data-status="VO"], .input-hora[data-status="CQ"], .input-hora[data-status="TN"] { background: #99ccff; border-color: #0066cc; color: #003366; font-weight: bold; }
-        .input-hora[data-status="EA"], .input-hora[data-status="TR"] { background: #ffff99; border-color: #cccc00; color: #666600; font-weight: bold; }
-        .input-hora[data-status="FR"] { background: #90ee90; border-color: #008000; color: #004d00; font-weight: bold; }
-        .input-hora[data-status="FS"] { background: #ff9999; border-color: #cc0000; color: #660000; font-weight: bold; }
-        .input-hora[data-status="FE"] { background: #ccffcc; border-color: #00cc00; color: #006600; font-weight: bold; }
-        .input-hora[data-status="RE"] { background: #ffccff; border-color: #cc66cc; color: #660066; font-weight: bold; }
-        .input-hora[data-status="SO"] { background: #ffffff; border-color: #999999; color: #333333; font-weight: bold; }
-        .input-hora[data-status="default"] { background: #f9f2e0; border-color: #c9aa77; }
+    --pax:       #3B9EFF;
+    --pax-glow:  rgba(59,158,255,0.15);
+    --carga:     #FF9A3C;
+    --carga-glow:rgba(255,154,60,0.15);
+    --remocao:   #FF4D6A;
+    --remocao-glow:rgba(255,77,106,0.15);
 
-        .total-cell { background: #e7dbbc; font-weight: bold; }
-        .group-title-row td {
-            background: linear-gradient(135deg, #ccaa7a, #b1834d);
-            font-weight: bold; font-size: 1.2rem; text-align: center;
-        }
-        .info-footer {
-            display: flex; justify-content: space-between; align-items: center;
-            flex-wrap: wrap; margin: 16px 24px; gap: 12px;
-        }
-        .legenda {
-            background: #eedbba; border-radius: 36px; padding: 10px 18px;
-            font-size: 11px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
-        }
-        .legenda-item {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 2px 10px; border-radius: 20px;
-        }
-        .status-chip {
-            background: #4c351e; border-radius: 60px; padding: 5px 15px;
-            font-size: 0.7rem; font-weight: bold; color: #ffe1a0;
-            box-shadow: inset 0 1px 3px #ffdf9a, 0 2px 4px black;
-        }
-        .sync-bar { display: flex; justify-content: flex-end; padding: 0 20px 8px; }
-        .sync-status {
-            font-size: 0.7rem; background: #4c351e;
-            padding: 4px 12px; border-radius: 60px; color: #ffe1a0;
-        }
-        .modal-senha, .modal-detalhe {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); backdrop-filter: blur(6px);
-            display: flex; align-items: center; justify-content: center; z-index: 2000;
-        }
-        .card-senha, .card-detalhe {
-            background: #fdf5e6; border-radius: 48px; width: 90%; max-width: 700px;
-            padding: 24px; box-shadow: 0 20px 35px black; max-height: 85vh; overflow-y: auto;
-        }
-        .card-senha { text-align: center; max-width: 350px; }
-        .card-senha input {
-            width: 100%; padding: 12px; margin: 20px 0; border-radius: 60px;
-            border: 2px solid #b67e45; background: #fff2e0;
-            font-size: 1rem; text-align: center;
-        }
-        .botoes-senha { display: flex; gap: 15px; justify-content: center; }
-        .btn-modal {
-            background: #a07143; color: white; border: none;
-            padding: 8px 22px; border-radius: 60px; cursor: pointer;
-        }
-        .tabela-detalhe {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        .tabela-detalhe th, .tabela-detalhe td {
-            border: 1px solid #ccb28b;
-            padding: 10px 8px;
-            text-align: left;
-        }
-        .tabela-detalhe th {
-            background: #e8d5b0;
-            font-weight: bold;
-            text-align: center;
-        }
-        .progress-bar-wrap {
-            background: #e0cfa8;
-            border-radius: 10px;
-            height: 12px;
-            width: 100%;
-            overflow: hidden;
-        }
-        .barra-fill {
-            background: #e67e22;
-            height: 100%;
-            border-radius: 10px;
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-        .btn-fechar {
-            background: #b07842; border: none; padding: 10px 28px;
-            border-radius: 60px; color: white; margin-top: 20px; cursor: pointer;
-            display: block; margin-left: auto; margin-right: auto;
-        }
-        .badge-dia-edicao {
-            background: #e6a800; border-radius: 60px; padding: 5px 14px;
-            font-size: 0.75rem; font-weight: bold; color: #3b2a00; display: none;
-        }
-        .badge-dia-edicao.visivel { display: inline-block; }
-        .toast {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            background: #3b2a1f; color: #ffe1a0; padding: 10px 24px;
-            border-radius: 60px; font-size: 0.85rem; font-weight: bold;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4); z-index: 9999;
-            opacity: 0; transition: opacity 0.3s ease;
-            pointer-events: none; white-space: nowrap;
-        }
-        .toast.show { opacity: 1; }
-    </style>
+    --caravan:   #2DD4BF;
+    --cessna:    #A78BFA;
+    --gold:      #F5C542;
+
+    --text:      #E8F0FE;
+    --sub:       #8BA8C8;
+    --faint:     #3D567A;
+    --radius:    12px;
+    
+    --ciente:    #4ADE80;  /* cor quando comandante confirma ciência */
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    padding: 16px 12px 48px;
+    padding-top: 120px; /* espaço para o cabeçalho fixo */
+  }
+
+  .page { max-width: 480px; margin: 0 auto; }
+
+  /* ── HEADER FIXO (STICKY) ── */
+  .header {
+    background: linear-gradient(135deg, #0E2040 0%, #142D55 100%);
+    border: 1px solid var(--faint);
+    border-radius: 16px;
+    text-align: center;
+    padding: 22px 16px 18px;
+    margin-bottom: 22px;
+    position: sticky;
+    top: 12px;          /* distância do topo */
+    z-index: 100;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    transition: box-shadow 0.3s;
+  }
+  .header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(59,158,255,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header-eyebrow {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+  .header-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #fff;
+  }
+  .header-date {
+    font-size: 13px;
+    color: var(--sub);
+    margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .header-planes {
+    margin-top: 10px;
+    font-size: 20px;
+    letter-spacing: 8px;
+    opacity: 0.35;
+  }
+
+  /* ── AIRCRAFT SECTION ── */
+  .ac-block { margin-bottom: 26px; }
+
+  .ac-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px 10px 0 0;
+    margin-bottom: 1px;
+  }
+  .ac-header.cessna  { background: linear-gradient(90deg, #2A1F5A 0%, #1A1540 100%); border-bottom: 2px solid var(--cessna); }
+  .ac-header.caravan { background: linear-gradient(90deg, #0D2E2A 0%, #0A1E1C 100%); border-bottom: 2px solid var(--caravan); }
+
+  .ac-icon { font-size: 18px; }
+  .ac-name {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+  }
+  .ac-name.cessna  { color: var(--cessna); }
+  .ac-name.caravan { color: var(--caravan); }
+  .ac-count {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--sub);
+    background: rgba(255,255,255,0.06);
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  /* ── CLIENT SUBSECTION ── */
+  .client-block {
+    background: var(--surface);
+    border-radius: 0 0 10px 10px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .client-label {
+    padding: 7px 14px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--sub);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.03);
+  }
+
+  /* ── FLIGHT CARD ── */
+  .flight-card {
+    display: flex;
+    gap: 0;
+    background: var(--card);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    position: relative;
+    transition: background 0.2s;
+  }
+  .flight-card:last-child { border-bottom: none; }
+
+  .type-bar {
+    width: 4px;
+    flex-shrink: 0;
+    border-radius: 0;
+  }
+  .type-bar.pax     { background: var(--pax); }
+  .type-bar.carga   { background: var(--carga); }
+  .type-bar.remocao { background: var(--remocao); animation: pulse-remocao 1.2s ease-in-out infinite; }
+
+  @keyframes pulse-remocao {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+  }
+
+  .card-body {
+    flex: 1;
+    padding: 11px 13px;
+  }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 7px;
+    flex-wrap: wrap;
+  }
+
+  .type-badge {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+  .type-badge.pax     { background: var(--pax-glow);     color: var(--pax);     border: 1px solid rgba(59,158,255,0.4); }
+  .type-badge.carga   { background: var(--carga-glow);   color: var(--carga);   border: 1px solid rgba(255,154,60,0.4); }
+  .type-badge.remocao { background: var(--remocao-glow); color: var(--remocao); border: 1px solid rgba(255,77,106,0.4); animation: pulse-remocao 1.2s ease-in-out infinite; }
+
+  .card-reg {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: #fff;
+  }
+  .card-reg.tbd { color: var(--faint); letter-spacing: 1px; }
+
+  .card-num {
+    margin-left: auto;
+    font-size: 10px;
+    font-family: monospace;
+    color: var(--gold);
+    background: rgba(245,197,66,0.1);
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid rgba(245,197,66,0.25);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .card-num:hover {
+    background: rgba(245,197,66,0.2);
+    transform: scale(1.03);
+  }
+
+  .card-crew {
+    font-size: 12px;
+    color: var(--sub);
+    margin-bottom: 7px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: color 0.2s;
+    user-select: none;
+  }
+  .card-crew.ciente {
+    color: var(--ciente);
+    font-weight: 700;
+  }
+  .card-crew.ciente .crew-dot {
+    background: var(--ciente);
+    opacity: 1;
+  }
+
+  .crew-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--sub);
+    opacity: 0.5;
+    flex-shrink: 0;
+    transition: background 0.2s, opacity 0.2s;
+  }
+
+  .card-route {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-bottom: 7px;
+  }
+  .rpt {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.06);
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+  .rpt.home {
+    background: rgba(59,158,255,0.1);
+    color: var(--pax);
+  }
+  .rarrow {
+    font-size: 9px;
+    color: var(--faint);
+  }
+  .repeat-marker {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--gold);
+    background: rgba(245,197,66,0.15);
+    padding: 1px 8px;
+    border-radius: 12px;
+    border: 1px solid rgba(245,197,66,0.4);
+    letter-spacing: 0.5px;
+  }
+
+  .card-obs {
+    font-size: 11px;
+    color: #7A9EC0;
+    line-height: 1.5;
+    padding-top: 7px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+
+  /* ── PEOPLE SECTIONS ── */
+  .people-section {
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .people-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .people-header.coord       { background: #1A1F3A; color: #9B8FFF; border-bottom: 2px solid #4A3FA0; }
+  .people-header.stand-voare { background: #0F2030; color: var(--pax); border-bottom: 2px solid #1E5080; }
+  .people-header.stand-gen   { background: #0F1E10; color: #4ADE80; border-bottom: 2px solid #1A5020; }
+
+  .people-body {
+    background: var(--surface);
+    padding: 12px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+  .person-chip {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 11px;
+    border-radius: 20px;
+  }
+  .person-chip.coord       { background: rgba(155,143,255,0.12); color: #C4BDFF; border: 1px solid rgba(155,143,255,0.25); }
+  .person-chip.stand-voare { background: rgba(59,158,255,0.1);   color: #7EC8FF; border: 1px solid rgba(59,158,255,0.2); }
+  .person-chip.stand-gen   { background: rgba(74,222,128,0.1);   color: #86EFAC; border: 1px solid rgba(74,222,128,0.2); }
+
+  .footer {
+    text-align: center;
+    margin-top: 28px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal-box {
+    background: var(--surface);
+    border: 1px solid var(--faint);
+    border-radius: var(--radius);
+    max-width: 400px;
+    width: 100%;
+    padding: 24px 20px 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    transform: scale(0.95);
+    transition: transform 0.2s ease;
+  }
+  .modal-overlay.active .modal-box {
+    transform: scale(1);
+  }
+  .modal-close {
+    float: right;
+    background: none;
+    border: none;
+    color: var(--faint);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 0 4px;
+  }
+  .modal-close:hover { color: #fff; }
+  .modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #fff;
+  }
+  .modal-detail {
+    font-size: 14px;
+    color: var(--sub);
+    line-height: 1.7;
+  }
+  .modal-detail strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .modal-detail .highlight {
+    color: var(--gold);
+  }
+</style>
 </head>
 <body>
-<div class="skeuo-container">
-    <div class="planilha-card">
-        <div class="cabecalho-skeuo">
-            <div class="title-area">
-                <h1>✈️ REGISTRO DE HORAS</h1>
-                <input type="text" id="campoMes" class="mes-editavel" value="Junho" disabled>
-            </div>
-            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-                <span class="badge-dia-edicao" id="badgeDiaEdicao">✏️ EDITANDO DIA --</span>
-                <div class="badge-senha" id="statusBadge">🔒 SOMENTE LEITURA</div>
-            </div>
+<div class="page">
+
+<!-- HEADER FIXO -->
+<div class="header">
+  <div class="header-eyebrow">📋 Demanda Operacional</div>
+  <div class="header-title">PROGRAMAÇÃO</div>
+  <div class="header-date">13 de Junho de 2026</div>
+  <div class="header-planes">✈ ✈ ✈</div>
+</div>
+
+<!-- ══════════════ CESSNA ══════════════ -->
+<div class="ac-block">
+  <div class="ac-header cessna">
+    <span class="ac-icon">✈️</span>
+    <span class="ac-name cessna">Cessna 206 / 210</span>
+    <span class="ac-count">15 voos</span>
+  </div>
+  <div class="client-block">
+    <div class="client-label">✦ Yanomami</div>
+
+    <!-- #31 Remoção -->
+    <div class="flight-card" data-oma="31" data-tipo="Remoção" data-reg="KON" data-trip="Otto" data-rota="Swpd › Kuratanha › Swpd" data-obs="Vai levando profissional SESAI.">
+      <div class="type-bar remocao"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge remocao">🚑 Remoção</span>
+          <span class="card-reg">KON</span>
+          <span class="card-num" data-oma="31">#31</span>
         </div>
-        <div class="top-actions">
-            <div class="button-group">
-                <button class="btn-skeuo" id="btnDesbloquear">🔐 DESBLOQUEAR</button>
-                <button class="btn-skeuo" id="btnLimpar" disabled>🧹 LIMPAR</button>
-                <button class="btn-skeuo" id="btnBloquear" disabled>🔒 BLOQUEAR</button>
-                <button class="btn-skeuo" id="btnSairDia" style="display:none">✖ SAIR DO DIA</button>
-            </div>
+        <div class="card-crew" data-commandante="Otto"><span class="crew-dot"></span>Otto</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">Kuratanha</span><span class="rarrow">›</span>
+          <span class="rpt home">Swpd</span>
         </div>
-        <div class="sync-bar">
-            <span class="sync-status" id="syncStatus">💾 Sincronizado</span>
-        </div>
-        <div class="dias-botoes" id="botoesDias"></div>
-        <div class="table-wrapper">
-            <table class="planilha" id="tabelaHoras">
-                <thead id="tableHeader"></thead>
-                <tbody id="planilhaBody"></tbody>
-                <tfoot id="tfootTotal"></tfoot>
-            </table>
-        </div>
-        <div class="info-footer">
-            <div class="legenda">
-                <span class="legenda-item" style="background:#ffb366;">DM/CM = Laranja</span>
-                <span class="legenda-item" style="background:#99ccff;">VO/CQ/TN = Azul</span>
-                <span class="legenda-item" style="background:#ffff99;">EA/TR = Amarelo</span>
-                <span class="legenda-item" style="background:#90ee90;">FR = Verde</span>
-                <span class="legenda-item" style="background:#ff9999;">FS = Vermelho</span>
-                <span class="legenda-item" style="background:#ccffcc;">FE = Verde Claro</span>
-                <span class="legenda-item" style="background:#ffccff;">RE = Rosa</span>
-                <span class="legenda-item" style="background:#ffffff;">SO = Branco</span>
-                <span><i class="fas fa-edit"></i> Toque no dia → editar coluna | Toque longo → disponíveis</span>
-            </div>
-            <div class="status-chip" id="editModeChip">📖 MODO VISUALIZAÇÃO</div>
-        </div>
+        <div class="card-obs">Vai levando profissional SESAI.</div>
+      </div>
     </div>
+
+    <!-- #31 Carga -->
+    <div class="flight-card" data-oma="31b" data-tipo="Carga" data-reg="KON" data-trip="Otto" data-rota="Swpd › Waharo › Swpd" data-obs="Vai levando carga (QAV) para o Waharo.">
+      <div class="type-bar carga"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge carga">📦 Carga</span>
+          <span class="card-reg">KON</span>
+          <span class="card-num" data-oma="31b">#31</span>
+        </div>
+        <div class="card-crew" data-commandante="Otto"><span class="crew-dot"></span>Otto</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">Waharo</span><span class="rarrow">›</span>
+          <span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando carga (QAV) para o Waharo.</div>
+      </div>
+    </div>
+
+    <!-- #3194 Pax -->
+    <div class="flight-card" data-oma="3194" data-tipo="Pax" data-reg="XCG" data-trip="Igor" data-rota="Swpd › M. Marauiá › Swpd" data-obs="Vai levando pax para a M. Marauiá.">
+      <div class="type-bar pax"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge pax">🧍 Pax</span>
+          <span class="card-reg">XCG</span>
+          <span class="card-num" data-oma="3194">#3194</span>
+        </div>
+        <div class="card-crew" data-commandante="Igor"><span class="crew-dot"></span>Igor</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">M. Marauiá</span><span class="rarrow">›</span>
+          <span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando pax para a M. Marauiá.</div>
+      </div>
+    </div>
+
+    <!-- #3195 Carga ×4 -->
+    <div class="flight-card" data-oma="3195" data-tipo="Carga" data-reg="LNS" data-trip="Sérgio" data-rota="Swpd › M. Marauiá ⇄ S. Isabel ×4 › Swpd" data-obs="Vai levando carga para a M. Marauiá.">
+      <div class="type-bar carga"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge carga">📦 Carga</span>
+          <span class="card-reg">LNS</span>
+          <span class="card-num" data-oma="3195">#3195</span>
+        </div>
+        <div class="card-crew" data-commandante="Sérgio"><span class="crew-dot"></span>Sérgio</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">M. Marauiá</span><span class="rarrow">⇄</span>
+          <span class="rpt">S. Isabel</span>
+          <span class="repeat-marker">×4</span>
+          <span class="rarrow">›</span><span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando carga para a M. Marauiá.</div>
+      </div>
+    </div>
+
+    <!-- #3196 Carga ×4 -->
+    <div class="flight-card" data-oma="3196" data-tipo="Carga" data-reg="DPD" data-trip="Dayvid" data-rota="Swpd › M. Marauiá ⇄ S. Isabel ×4 › Swpd" data-obs="Vai levando carga para a M. Marauiá.">
+      <div class="type-bar carga"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge carga">📦 Carga</span>
+          <span class="card-reg">DPD</span>
+          <span class="card-num" data-oma="3196">#3196</span>
+        </div>
+        <div class="card-crew" data-commandante="Dayvid"><span class="crew-dot"></span>Dayvid</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">M. Marauiá</span><span class="rarrow">⇄</span>
+          <span class="rpt">S. Isabel</span>
+          <span class="repeat-marker">×4</span>
+          <span class="rarrow">›</span><span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando carga para a M. Marauiá.</div>
+      </div>
+    </div>
+
+    <!-- #3197 Carga ×4 -->
+    <div class="flight-card" data-oma="3197" data-tipo="Carga" data-reg="NYA" data-trip="Milton" data-rota="Swpd › M. Marauiá ⇄ S. Isabel ×4 › Swpd" data-obs="Vai levando carga para a M. Marauiá.">
+      <div class="type-bar carga"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge carga">📦 Carga</span>
+          <span class="card-reg">NYA</span>
+          <span class="card-num" data-oma="3197">#3197</span>
+        </div>
+        <div class="card-crew" data-commandante="Milton"><span class="crew-dot"></span>Milton</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">M. Marauiá</span><span class="rarrow">⇄</span>
+          <span class="rpt">S. Isabel</span>
+          <span class="repeat-marker">×4</span>
+          <span class="rarrow">›</span><span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando carga para a M. Marauiá.</div>
+      </div>
+    </div>
+
+    <!-- #3198 Pax -->
+    <div class="flight-card" data-oma="3198" data-tipo="Pax" data-reg="OJV" data-trip="Adelio" data-rota="Swpd › Marari › Waharo › Swpd" data-obs="Vai levando conselheiros e pacientes de alta.">
+      <div class="type-bar pax"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge pax">🧍 Pax</span>
+          <span class="card-reg">OJV</span>
+          <span class="card-num" data-oma="3198">#3198</span>
+        </div>
+        <div class="card-crew" data-commandante="Adelio"><span class="crew-dot"></span>Adelio</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">Marari</span><span class="rarrow">›</span>
+          <span class="rpt">Waharo</span><span class="rarrow">›</span>
+          <span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando conselheiros e pacientes de alta.</div>
+      </div>
+    </div>
+
+    <!-- #3199 Pax -->
+    <div class="flight-card" data-oma="3199" data-tipo="Pax" data-reg="××-××" data-trip="A definir" data-rota="Swpd › Erico › Sauba › Swpd" data-obs="Vai levando conselheiros e pacientes de alta.">
+      <div class="type-bar pax"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge pax">🧍 Pax</span>
+          <span class="card-reg tbd">××-××</span>
+          <span class="card-num" data-oma="3199">#3199</span>
+        </div>
+        <div class="card-crew" data-commandante="A definir"><span class="crew-dot"></span>A definir</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">Erico</span><span class="rarrow">›</span>
+          <span class="rpt">Sauba</span><span class="rarrow">›</span>
+          <span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando conselheiros e pacientes de alta.</div>
+      </div>
+    </div>
+
+    <!-- #3200 Pax -->
+    <div class="flight-card" data-oma="3200" data-tipo="Pax" data-reg="××-××" data-trip="A definir" data-rota="Swpd › Surucucu › Swpd" data-obs="Vai levando conselheiros e pacientes de alta.">
+      <div class="type-bar pax"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge pax">🧍 Pax</span>
+          <span class="card-reg tbd">××-××</span>
+          <span class="card-num" data-oma="3200">#3200</span>
+        </div>
+        <div class="card-crew" data-commandante="A definir"><span class="crew-dot"></span>A definir</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">Surucucu</span><span class="rarrow">›</span>
+          <span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando conselheiros e pacientes de alta.</div>
+      </div>
+    </div>
+
+    <!-- #3201 Pax com ×2 (Toototobi e Aracá) -->
+    <div class="flight-card" data-oma="3201" data-tipo="Pax" data-reg="KAG" data-trip="Gabriel" data-rota="Swpd › Demini › Ajuricaba › Aracá › Toototobi ⇄ Xiroxiro ×2 › Swpd" data-obs="Vai levando conselheiros e pacientes de alta.">
+      <div class="type-bar pax"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge pax">🧍 Pax</span>
+          <span class="card-reg">KAG</span>
+          <span class="card-num" data-oma="3201">#3201</span>
+        </div>
+        <div class="card-crew" data-commandante="Gabriel"><span class="crew-dot"></span>Gabriel</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">Demini</span><span class="rarrow">›</span>
+          <span class="rpt">Ajuricaba</span><span class="rarrow">›</span>
+          <span class="rpt">Aracá</span><span class="rarrow">›</span>
+          <span class="rpt">Toototobi</span><span class="rarrow">⇄</span>
+          <span class="rpt">Xiroxiro</span>
+          <span class="repeat-marker">×2</span>
+          <span class="rarrow">›</span><span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando conselheiros e pacientes de alta.</div>
+      </div>
+    </div>
+
+    <!-- #3202 Pax -->
+    <div class="flight-card" data-oma="3202" data-tipo="Pax" data-reg="××-××" data-trip="A definir" data-rota="Swpd › Palimiú › Waikas › Swpd" data-obs="Vai levando conselheiros e pacientes de alta.">
+      <div class="type-bar pax"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge pax">🧍 Pax</span>
+          <span class="card-reg tbd">××-××</span>
+          <span class="card-num" data-oma="3202">#3202</span>
+        </div>
+        <div class="card-crew" data-commandante="A definir"><span class="crew-dot"></span>A definir</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">Palimiú</span><span class="rarrow">›</span>
+          <span class="rpt">Waikas</span><span class="rarrow">›</span>
+          <span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando conselheiros e pacientes de alta.</div>
+      </div>
+    </div>
+
+    <!-- #3203 Pax -->
+    <div class="flight-card" data-oma="3203" data-tipo="Pax" data-reg="DNT" data-trip="Lucas" data-rota="Swpd › Surucucu › Swpd" data-obs="Vai levando pax (Xitei) para Surucucu.">
+      <div class="type-bar pax"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge pax">🧍 Pax</span>
+          <span class="card-reg">DNT</span>
+          <span class="card-num" data-oma="3203">#3203</span>
+        </div>
+        <div class="card-crew" data-commandante="Lucas"><span class="crew-dot"></span>Lucas</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">Surucucu</span><span class="rarrow">›</span>
+          <span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando pax (Xitei) para Surucucu.</div>
+      </div>
+    </div>
+
+    <!-- #3204 Pax -->
+    <div class="flight-card" data-oma="3204" data-tipo="Pax" data-reg="JSA" data-trip="Costa" data-rota="Swpd › Surucucu › Swpd" data-obs="Vai levando logística para Surucucu.">
+      <div class="type-bar pax"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge pax">🧍 Pax</span>
+          <span class="card-reg">JSA</span>
+          <span class="card-num" data-oma="3204">#3204</span>
+        </div>
+        <div class="card-crew" data-commandante="Costa"><span class="crew-dot"></span>Costa</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">Surucucu</span><span class="rarrow">›</span>
+          <span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando logística para Surucucu.</div>
+      </div>
+    </div>
+
+    <!-- #3205 PAX (era carga) -->
+    <div class="flight-card" data-oma="3205" data-tipo="Pax" data-reg="××-××" data-trip="A definir" data-rota="Swpd › Auaris › Swpd" data-obs="Vai levando pax para Auaris.">
+      <div class="type-bar pax"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge pax">🧍 Pax</span>
+          <span class="card-reg tbd">××-××</span>
+          <span class="card-num" data-oma="3205">#3205</span>
+        </div>
+        <div class="card-crew" data-commandante="A definir"><span class="crew-dot"></span>A definir</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">Auaris</span><span class="rarrow">›</span>
+          <span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando pax para Auaris.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════ CARAVAN ══════════════ -->
+<div class="ac-block">
+  <div class="ac-header caravan">
+    <span class="ac-icon">🛩️</span>
+    <span class="ac-name caravan">Caravan 208</span>
+    <span class="ac-count">6 voos</span>
+  </div>
+  <div class="client-block">
+    <div class="client-label">✦ Yanomami</div>
+
+    <!-- #3206 Carga -->
+    <div class="flight-card" data-oma="3206" data-tipo="Carga" data-reg="SLH" data-trip="Perisson / Thales" data-rota="Swpd › Surucucu › Swpd" data-obs="Vai levando carga (Xitei) para Surucucu.">
+      <div class="type-bar carga"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge carga">📦 Carga</span>
+          <span class="card-reg">SLH</span>
+          <span class="card-num" data-oma="3206">#3206</span>
+        </div>
+        <div class="card-crew" data-commandante="Perisson / Thales"><span class="crew-dot"></span>Perisson / Thales</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">Surucucu</span><span class="rarrow">›</span>
+          <span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando carga (Xitei) para Surucucu.</div>
+      </div>
+    </div>
+
+    <!-- #3207 Carga -->
+    <div class="flight-card" data-oma="3207" data-tipo="Carga" data-reg="SLL" data-trip="João / Daniela" data-rota="Swpd › Surucucu › Swpd" data-obs="Vai levando carga (Xitei, Haxiu, Kataroa, Hokomawe e Surucucu).">
+      <div class="type-bar carga"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge carga">📦 Carga</span>
+          <span class="card-reg">SLL</span>
+          <span class="card-num" data-oma="3207">#3207</span>
+        </div>
+        <div class="card-crew" data-commandante="João / Daniela"><span class="crew-dot"></span>João / Daniela</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">Surucucu</span><span class="rarrow">›</span>
+          <span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando carga (Xitei, Haxiu, Kataroa, Hokomawe e Surucucu).</div>
+      </div>
+    </div>
+
+    <!-- #3208 Carga -->
+    <div class="flight-card" data-oma="3208" data-tipo="Carga" data-reg="SLH" data-trip="Perisson / Thales" data-rota="Swpd › Surucucu › Swpd" data-obs="Vai levando carga para Surucucu.">
+      <div class="type-bar carga"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge carga">📦 Carga</span>
+          <span class="card-reg">SLH</span>
+          <span class="card-num" data-oma="3208">#3208</span>
+        </div>
+        <div class="card-crew" data-commandante="Perisson / Thales"><span class="crew-dot"></span>Perisson / Thales</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">Surucucu</span><span class="rarrow">›</span>
+          <span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando carga para Surucucu.</div>
+      </div>
+    </div>
+
+    <!-- #3209 Carga -->
+    <div class="flight-card" data-oma="3209" data-tipo="Carga" data-reg="SLL" data-trip="João / Daniela" data-rota="Swpd › Surucucu › Swpd" data-obs="Vai levando carga para Surucucu.">
+      <div class="type-bar carga"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge carga">📦 Carga</span>
+          <span class="card-reg">SLL</span>
+          <span class="card-num" data-oma="3209">#3209</span>
+        </div>
+        <div class="card-crew" data-commandante="João / Daniela"><span class="crew-dot"></span>João / Daniela</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">Surucucu</span><span class="rarrow">›</span>
+          <span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando carga para Surucucu.</div>
+      </div>
+    </div>
+
+    <!-- #3210 Pax -->
+    <div class="flight-card" data-oma="3210" data-tipo="Pax" data-reg="SLH" data-trip="Perisson / Thales" data-rota="Swpd › Surucucu › Swpd" data-obs="Vai levando pax para Surucucu.">
+      <div class="type-bar pax"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge pax">🧍 Pax</span>
+          <span class="card-reg">SLH</span>
+          <span class="card-num" data-oma="3210">#3210</span>
+        </div>
+        <div class="card-crew" data-commandante="Perisson / Thales"><span class="crew-dot"></span>Perisson / Thales</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">Surucucu</span><span class="rarrow">›</span>
+          <span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando pax para Surucucu.</div>
+      </div>
+    </div>
+
+    <!-- #3211 Pax -->
+    <div class="flight-card" data-oma="3211" data-tipo="Pax" data-reg="SLL" data-trip="João / Daniela" data-rota="Swpd › Surucucu › Swpd" data-obs="Vai levando pax para Surucucu.">
+      <div class="type-bar pax"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge pax">🧍 Pax</span>
+          <span class="card-reg">SLL</span>
+          <span class="card-num" data-oma="3211">#3211</span>
+        </div>
+        <div class="card-crew" data-commandante="João / Daniela"><span class="crew-dot"></span>João / Daniela</div>
+        <div class="card-route">
+          <span class="rpt home">Swpd</span><span class="rarrow">›</span>
+          <span class="rpt">Surucucu</span><span class="rarrow">›</span>
+          <span class="rpt home">Swpd</span>
+        </div>
+        <div class="card-obs">Vai levando pax para Surucucu.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ COORDENAÇÃO ══ -->
+<div class="people-section">
+  <div class="people-header coord">🎯 Coordenação</div>
+  <div class="people-body">
+    <span class="person-chip coord">Emerson</span>
+    <span class="person-chip coord">Bispo</span>
+    <span class="person-chip coord">Marcos</span>
+    <span class="person-chip coord">Falcão</span>
+  </div>
+</div>
+
+<!-- ══ STAND BY VOARE ══ -->
+<div class="people-section">
+  <div class="people-header stand-voare">🛫 Stand By — Voare</div>
+  <div class="people-body">
+    <span class="person-chip stand-voare">Costa</span>
+  </div>
+</div>
+
+<!-- ══ STAND BY GERAL ══ -->
+<div class="people-section">
+  <div class="people-header stand-gen">⏳ Stand By</div>
+  <div class="people-body">
+    <span class="person-chip stand-gen">Renan</span>
+    <span class="person-chip stand-gen">Matias</span>
+    <span class="person-chip stand-gen">Frank</span>
+    <span class="person-chip stand-gen">Amarildo</span>
+    <span class="person-chip stand-gen">Házafe</span>
+    <span class="person-chip stand-gen">Andrade</span>
+    <span class="person-chip stand-gen">Ronie</span>
+    <span class="person-chip stand-gen">Leandro</span>
+  </div>
+</div>
+
+<div class="footer">Programação Operacional · 13/06/2026</div>
+
+</div>
+
+<!-- ── MODAL ── -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="modal-title" id="modalTitle">Detalhes do Voo</div>
+    <div class="modal-detail" id="modalDetail"></div>
+  </div>
 </div>
 
 <script>
-function showToast(msg, duracao = 2500) {
-    let toast = document.getElementById('toast');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'toast';
-        toast.className = 'toast';
-        document.body.appendChild(toast);
+  (function() {
+    // ── MODAL ──
+    const overlay = document.getElementById('modalOverlay');
+    const closeBtn = document.getElementById('modalClose');
+    const titleEl = document.getElementById('modalTitle');
+    const detailEl = document.getElementById('modalDetail');
+
+    function closeModal() {
+      overlay.classList.remove('active');
     }
-    toast.textContent = msg;
-    toast.classList.add('show');
-    clearTimeout(toast._timer);
-    toast._timer = setTimeout(() => toast.classList.remove('show'), duracao);
-}
-
-// ======================== ESCALA MENSAL ========================
-const ESCALA_MENSAL = {
-    "Adelio": ["FE","FE","FE","FE","FE","FE","FE","FE","SO","SO","SO","FS","FS","FS","RE","SO","FR","SO","SO","FR","SO","SO","FR","SO","SO","FR","SO","SO","SO","FR"],
-    "Otto": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO"],
-    "Andre": ["DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM"],
-    "Cleiton": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR"],
-    "Cleverson": ["SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
-    "Edson": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","FR","SO"],
-    "Frank": ["FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO"],
-    "Gabriel": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO"],
-    "Costa": ["SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
-    "Hazafe": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR"],
-    "Amarildo": ["SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
-    "Igorh": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO"],
-    "Joao": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO"],
-    "Dayvid": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR"],
-    "Lindomar": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
-    "Lucas": ["FR","FR","FR","FR","FS","FS","FS","RE","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO","SO"],
-    "Luiz": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO"],
-    "Mathias": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO"],
-    "Milton": ["FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","SO","SO","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
-    "Pascoal": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO"],
-    "Paulo": ["EA","EA","EA","EA","SO","FR","FR","EA","EA","EA","EA","FS","FS","FS","RE","EA","EA","EA","SO","FR","FR","EA","EA","EA","EA","SO","SO","FR","SO","SO"],
-    "Perisson": ["FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FE","FE","FE","FE","FE","FE","FE"],
-    "Renan": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
-    "Roberto": ["SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO"],
-    "Ronie": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR"],
-    "Rui": ["FE","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
-    "Sergio": ["FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO"],
-    "Tarso": ["SO","SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FS","FS","FS","RE","SO"],
-    "Vitor": ["FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
-    "Bento": ["FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
-    "Wellber": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO"],
-    "Andrade": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO"],
-    "Yago": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO"],
-    "Cauê": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO"],
-    "Daniela": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO"],
-    "Ernesto": ["FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO"],
-    "Ruben": ["FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO"],
-    "Rodrigo": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO"],
-    "Ronaldo": ["SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
-    "Thales": ["SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
-    "Serafim": ["SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","SO","FR","SO","SO"],
-    "Tiago": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
-    "Leandro": ["SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
-    "Dany": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR"],
-    "Felipe": ["SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"]
-};
-
-const GRUPOS_PILOTO = {
-    "CARAVAN": ["Cleiton","Joao","Pascoal","Lindomar","Perisson","Rui","Yago"],
-    "COPILOTO": ["Cauê","Felipe","Ruben","Ernesto","Daniela","Thales","Serafim","Ronaldo","Rodrigo","Tiago"],
-};
-
-function getGrupo(nome) {
-    if (GRUPOS_PILOTO["CARAVAN"].includes(nome)) return "CARAVAN";
-    if (GRUPOS_PILOTO["COPILOTO"].includes(nome)) return "COPILOTO";
-    return "CESSNA 206/210";
-}
-
-let DIAS = 30;
-let isEditing = false;
-let diaEditandoIndex = null;
-let diaReferencia = null;
-let password = "";
-
-function diasNoMes(mes) {
-    const m = mes.toLowerCase();
-    if (m === "fevereiro") return 28;
-    if (["abril","junho","setembro","novembro"].includes(m)) return 30;
-    return 31;
-}
-
-function atualizarDias() {
-    const mesInput = document.getElementById('campoMes');
-    let mes = mesInput.value.trim();
-    if (!mes) mes = "Junho";
-    DIAS = diasNoMes(mes);
-    return DIAS;
-}
-
-function parseHora(v) {
-    if (!v) return 0;
-    let n = parseFloat(String(v).trim().replace(',','.'));
-    return isNaN(n) ? 0 : n;
-}
-function formatarHora(n) { return n.toFixed(1).replace('.',','); }
-
-function getStatusFromValue(value) {
-    const statusMap = {
-        "DM": "DM", "CM": "CM", "VO": "VO", "CQ": "CQ", "TN": "TN",
-        "EA": "EA", "TR": "TR", "FR": "FR", "FS": "FS", "FE": "FE",
-        "RE": "RE", "SO": "SO"
-    };
-    return statusMap[value] || null;
-}
-
-function getNomeFromRow(row) { return row.cells[0].innerText.trim(); }
-function getColIndex(inp) { return Array.from(inp.parentNode.parentNode.children).indexOf(inp.parentNode) - 1; }
-
-function atualizarCorInput(inp) {
-    const valor = inp.value.trim();
-    const status = getStatusFromValue(valor);
-    if (status) {
-        inp.setAttribute('data-status', status);
-        inp.classList.remove('has-value');
-    } else if (valor !== "" && parseHora(valor) > 0) {
-        inp.setAttribute('data-status', '');
-        inp.classList.add('has-value');
-    } else {
-        inp.setAttribute('data-status', 'default');
-        inp.classList.remove('has-value');
-    }
-}
-
-function atualizarTotalLinha(row) {
-    let soma = 0;
-    row.querySelectorAll('.input-hora').forEach((inp) => {
-        let val = parseHora(inp.value);
-        if (!isNaN(val) && val > 0) soma += val;
-        atualizarCorInput(inp);
+    closeBtn.addEventListener('click', closeModal);
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) closeModal();
     });
-    const totalCell = row.querySelector('.total-cell');
-    if (totalCell) totalCell.textContent = formatarHora(soma);
-    return soma;
-}
 
-function validarStreaks() {
-    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const inputs = row.querySelectorAll('.input-hora');
-        const vals = Array.from(inputs).map((inp) => {
-            let val = parseHora(inp.value);
-            return val > 0 ? 1 : 0;
-        });
-        let streak = 0;
-        const seq = new Array(DIAS).fill(false);
-        for (let i = 0; i < DIAS; i++) {
-            if (vals[i]) { streak++; if (streak >= 6) for (let j = i-streak+1; j <= i; j++) seq[j] = true; }
-            else streak = 0;
-        }
-        inputs.forEach((inp, i) => inp.classList.toggle('streak-day', seq[i]));
-        const nomeCell = row.querySelector('td:first-child');
-        const icon = nomeCell.querySelector('.alert-icon');
-        if (seq.some(v => v)) {
-            if (!icon) { const ic = document.createElement('i'); ic.className = 'fas fa-exclamation-triangle alert-icon'; ic.title = '6+ dias consecutivos'; nomeCell.appendChild(ic); }
-        } else if (icon) icon.remove();
+    document.querySelectorAll('.card-num').forEach(el => {
+      el.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const card = this.closest('.flight-card');
+        if (!card) return;
+        const oma = this.getAttribute('data-oma') || '--';
+        const tipo = card.dataset.tipo || '--';
+        const reg = card.dataset.reg || '--';
+        const trip = card.dataset.trip || '--';
+        const rota = card.dataset.rota || '--';
+        const obs = card.dataset.obs || '--';
+        titleEl.textContent = `Oma #${oma}`;
+        detailEl.innerHTML = `
+          <p><strong>Tipo:</strong> ${tipo}</p>
+          <p><strong>Matrícula:</strong> ${reg}</p>
+          <p><strong>Comandante:</strong> ${trip}</p>
+          <p><strong>Rota:</strong> <span class="highlight">${rota}</span></p>
+          <p><strong>Observação:</strong> ${obs}</p>
+        `;
+        overlay.classList.add('active');
+      });
     });
-}
 
-function recalcularTudo() {
-    let somaGeral = 0;
-    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => somaGeral += atualizarTotalLinha(row));
-    const tfoot = document.getElementById('tfootTotal');
-    tfoot.innerHTML = '';
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td style="font-weight:bold">🏁 TOTAL GERAL<\/td>${'<td><\/td>'.repeat(DIAS)}<td class="total-geral">${formatarHora(somaGeral)}<\/td>`;
-    tfoot.appendChild(tr);
-    validarStreaks();
-    atualizarTotaisBotoesDias();
-}
-
-function totalHorasDia(diaIndex) {
-    let soma = 0;
-    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const inp = row.cells[diaIndex+1]?.querySelector('.input-hora');
-        if (inp) {
-            let val = parseHora(inp.value);
-            if (!isNaN(val) && val > 0) soma += val;
-        }
+    // ── CIENTE DO COMANDANTE (toggle ao clicar no nome) ──
+    document.querySelectorAll('.card-crew').forEach(el => {
+      el.addEventListener('click', function(e) {
+        e.stopPropagation();
+        this.classList.toggle('ciente');
+      });
     });
-    return soma;
-}
 
-function atualizarTotaisBotoesDias() {
-    document.querySelectorAll('.btn-dia').forEach((btn, i) => {
-        const total = totalHorasDia(i);
-        const labelEl = btn.querySelector('.dia-total');
-        if (labelEl) labelEl.textContent = total > 0 ? formatarHora(total)+'h' : '';
-        btn.classList.toggle('tem-dados', total > 0);
-    });
-}
-
-function sairEdicaoDia() {
-    if (diaEditandoIndex !== null) {
-        diaEditandoIndex = null;
-        document.getElementById('badgeDiaEdicao').classList.remove('visivel');
-        document.getElementById('btnSairDia').style.display = 'none';
-        document.querySelectorAll('.btn-dia').forEach(btn => btn.classList.remove('dia-editando'));
-        limparDestaqueColuna();
-        // Re-bloquear todos os inputs
-        document.querySelectorAll('.input-hora').forEach(inp => inp.disabled = true);
-        recalcularTudo();
-    }
-}
-
-function ativarEdicaoDia(diaIndex) {
-    if (diaEditandoIndex !== null && diaEditandoIndex !== diaIndex) sairEdicaoDia();
-    diaEditandoIndex = diaIndex;
-    
-    // Torna toda a coluna editável
-    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
-        if (inp) inp.disabled = false;
-    });
-    
-    destacarColuna(diaIndex);
-    const th = document.querySelector(`#tableHeader th:nth-child(${diaIndex+2})`);
-    if (th) th.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
-    const diaNum = String(diaIndex+1).padStart(2,'0');
-    document.getElementById('badgeDiaEdicao').textContent = `✏️ EDITANDO DIA ${diaNum}`;
-    document.getElementById('badgeDiaEdicao').classList.add('visivel');
-    document.getElementById('btnSairDia').style.display = 'inline-block';
-    document.querySelectorAll('.btn-dia').forEach((btn,i) => btn.classList.toggle('dia-editando', i===diaIndex));
-    showToast(`✏️ Dia ${diaNum} liberado para edição`);
-}
-
-function destacarColuna(diaIndex) {
-    limparDestaqueColuna();
-    const colIdx = diaIndex+1;
-    document.querySelectorAll('#tableHeader tr th')[colIdx]?.classList.add('col-ativa');
-    document.querySelectorAll('#tabelaHoras tbody tr').forEach(row => {
-        if (row.cells[colIdx]) row.cells[colIdx].classList.add('col-ativa');
-    });
-}
-
-function limparDestaqueColuna() {
-    document.querySelectorAll('.col-ativa').forEach(el => el.classList.remove('col-ativa'));
-}
-
-// ======================== MODAL COMPARATIVO CORRIGIDO (apenas tabela) ========================
-function mostrarComparativoDia(diaIndex) {
-    const diaNumero = diaIndex + 1;
-    const dadosDia = {};
-    
-    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const nome = getNomeFromRow(row);
-        const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
-        let horas = 0;
-        if (inp) horas = parseHora(inp.value);
-        dadosDia[nome] = horas;
-    });
-    
-    const gruposMap = { "CESSNA 206/210": [], "CARAVAN": [], "COPILOTO": [] };
-    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const nome = getNomeFromRow(row);
-        const grupo = getGrupo(nome);
-        gruposMap[grupo].push({ nome, horas: dadosDia[nome] || 0 });
-    });
-    
-    let html = `<div class="card-detalhe"><h2 style="text-align:center; margin-bottom:20px;">📅 Dia ${String(diaNumero).padStart(2, '0')}</h2>`;
-    
-    for (let grupo in gruposMap) {
-        let lista = gruposMap[grupo].sort((a, b) => b.horas - a.horas);
-        if (lista.length === 0) continue;
-        const media = lista.reduce((s, p) => s + p.horas, 0) / lista.length;
-        const maxHoras = Math.max(...lista.map(p => p.horas), 0.1);
-        
-        html += `<div style="margin-bottom: 25px;">`;
-        html += `<h3 style="margin: 0 0 10px 0; color: #7a4a1e;">✈️ ${grupo}</h3>`;
-        html += `<p style="margin: 0 0 10px 0; font-size: 0.9rem;">📊 Média do grupo: <strong>${formatarHora(media)} h</strong></p>`;
-        html += `<div style="overflow-x: auto;"><table class="tabela-detalhe" style="width: 100%;">`;
-        html += `<thead><tr><th style="text-align: left;">Piloto</th><th style="text-align: center; width: 80px;">Horas</th><th style="text-align: center; width: 80px;">vs Média</th><th style="text-align: center;">Comparativo</th></thead><tbody>`;
-        
-        lista.forEach(p => {
-            const diff = p.horas - media;
-            const perc = maxHoras > 0 ? (p.horas / maxHoras) * 100 : 0;
-            const diffText = diff >= 0 ? `+${formatarHora(diff)}` : `${formatarHora(diff)}`;
-            const diffColor = diff >= 0 ? '#2a8a2a' : '#cc2222';
-            
-            html += `<tr>
-                <td style="text-align: left; font-weight: 500;">${p.nome}</td>
-                <td style="text-align: center; font-weight: bold;">${p.horas === 0 ? '—' : formatarHora(p.horas)}</strong></td>
-                <td style="text-align: center; color: ${diffColor}; font-weight: bold;">${diffText}</td>
-                <td style="min-width: 120px;"><div class="progress-bar-wrap"><div class="barra-fill" style="width: ${perc}%;"></div></div></td>
-            </tr>`;
-        });
-        
-        html += `</tbody>}</div></div><hr style="margin: 20px 0; border-color: #ccb28b;">`;
-    }
-    
-    html += `<button class="btn-fechar" id="fecharDetalhe">Fechar</button></div>`;
-    
-    const modal = document.createElement('div');
-    modal.className = 'modal-detalhe';
-    modal.innerHTML = html;
-    document.body.appendChild(modal);
-    modal.querySelector('#fecharDetalhe').onclick = () => modal.remove();
-    modal.onclick = e => { if (e.target === modal) modal.remove(); };
-}
-
-async function mostrarDisponiveis(diaRef) {
-    if (diaRef === null) { showToast("⚠️ Selecione um dia primeiro."); return; }
-    let diaSeguinte = diaRef+1;
-    if (diaSeguinte >= DIAS) { showToast("⚠️ Último dia do mês."); return; }
-    try {
-        const res = await fetch(`/api/available_commanders/${diaSeguinte}`);
-        const data = await res.json();
-        let html = `<div class="card-detalhe"><h2 style="text-align:center;">👥 Cmtes Disponíveis - Dia ${String(diaSeguinte+1).padStart(2,'00')}</h2>`;
-        for (let grupo in data) {
-            html += `<h3 style="margin-top: 15px;">${grupo}</h3>`;
-            if (data[grupo].length > 0) {
-                html += `<ul style="margin: 5px 0 15px 20px;">`;
-                data[grupo].forEach(c => html += `<li>${c.name} (${c.status})</li>`);
-                html += `</ul>`;
-            } else {
-                html += `<p>Nenhum piloto disponível.</p>`;
-            }
-        }
-        html += `<button class="btn-fechar" id="fecharDisponiveis">Fechar</button></div>`;
-        const modal = document.createElement('div');
-        modal.className = 'modal-detalhe';
-        modal.innerHTML = html;
-        document.body.appendChild(modal);
-        modal.querySelector('#fecharDisponiveis').onclick = () => modal.remove();
-        modal.onclick = e => { if (e.target===modal) modal.remove(); };
-    } catch(e) { showToast("❌ Erro ao carregar disponíveis."); }
-}
-
-async function carregarDoBackend() {
-    const syncSpan = document.getElementById('syncStatus');
-    syncSpan.innerHTML = '⏳ Carregando...';
-    try {
-        const res = await fetch('/api/data');
-        if (!res.ok) throw new Error('Falha na requisição');
-        const data = await res.json();
-        const pilots = data.pilots;
-        const logs = data.logs;
-
-        atualizarDias();
-
-        const thead = document.getElementById('tableHeader');
-        thead.innerHTML = `<tr><th>👤 PILOTO</th>${Array.from({length:DIAS},(_,i)=>`<th>${String(i+1).padStart(2,'00')}</th>`).join('')}<th>⭐ TOTAL</th>`;
-
-        const tbody = document.getElementById('planilhaBody');
-        tbody.innerHTML = '';
-
-        const grupos = { "CESSNA 206/210":[], "CARAVAN":[], "COPILOTO":[] };
-        pilots.forEach(p => grupos[p.group].push(p));
-
-        for (let grupo of ["CESSNA 206/210","CARAVAN","COPILOTO"]) {
-            const titleRow = document.createElement('tr');
-            titleRow.classList.add('group-title-row');
-            titleRow.innerHTML = `<td colspan="${DIAS+2}"><i class="fas fa-${grupo==="COPILOTO"?"headset":"plane"}"></i> ${grupo}<\/td>`;
-            tbody.appendChild(titleRow);
-
-            for (let p of grupos[grupo]) {
-                const row = document.createElement('tr');
-                row.classList.add('membro-row');
-                const nomeCell = document.createElement('td');
-                nomeCell.textContent = p.name;
-                row.appendChild(nomeCell);
-                let total = 0;
-
-                for (let i = 0; i < DIAS; i++) {
-                    const td = document.createElement('td');
-                    const inp = document.createElement('input');
-                    inp.type = 'text';
-                    inp.inputMode = 'decimal';
-                    inp.classList.add('input-hora');
-                    inp.placeholder = '0,0';
-
-                    const valor = logs[p.name]?.[i+1] || 0;
-                    if (valor > 0) {
-                        inp.value = formatarHora(valor);
-                        total += valor;
-                    } else {
-                        const statusOriginal = ESCALA_MENSAL[p.name]?.[i] || "";
-                        if (statusOriginal) {
-                            inp.value = statusOriginal;
-                        } else {
-                            inp.value = "";
-                        }
-                    }
-                    
-                    atualizarCorInput(inp);
-                    inp.disabled = true; // inicialmente bloqueado
-
-                    inp.addEventListener('input', function() {
-                        if (diaEditandoIndex !== null && (diaEditandoIndex === i) && isEditing) {
-                            atualizarTotalLinha(row);
-                            recalcularTudo();
-                            if (isEditing && password) salvarNoBackend();
-                        }
-                    });
-                    inp.addEventListener('blur', function() {
-                        if (diaEditandoIndex !== null && (diaEditandoIndex === i) && isEditing) {
-                            let v = parseHora(this.value);
-                            if (v > 0) {
-                                this.value = formatarHora(v);
-                            }
-                            atualizarCorInput(this);
-                            atualizarTotalLinha(row);
-                            recalcularTudo();
-                            if (isEditing && password) salvarNoBackend();
-                        }
-                    });
-                    td.appendChild(inp);
-                    row.appendChild(td);
-                }
-                const totalCell = document.createElement('td');
-                totalCell.classList.add('total-cell');
-                totalCell.textContent = formatarHora(total);
-                row.appendChild(totalCell);
-                tbody.appendChild(row);
-            }
-        }
-        recalcularTudo();
-        criarBotoesDias();
-        sairEdicaoDia();
-        syncSpan.innerHTML = '✅ Carregado';
-        setTimeout(() => syncSpan.innerHTML = '💾 Sincronizado', 2000);
-    } catch(e) {
-        console.error(e);
-        syncSpan.innerHTML = '❌ Erro ao carregar';
-    }
-}
-
-async function salvarNoBackend() {
-    if (!isEditing || !password) return;
-    const syncSpan = document.getElementById('syncStatus');
-    syncSpan.innerHTML = '⏳ Salvando...';
-    const logs = {};
-
-    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const nome = getNomeFromRow(row);
-        logs[nome] = {};
-        row.querySelectorAll('.input-hora').forEach((inp, i) => {
-            const val = parseHora(inp.value);
-            if (val > 0) logs[nome][i+1] = val;
-        });
-    });
-    try {
-        await fetch('/api/data', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password, logs })
-        });
-        syncSpan.innerHTML = '✅ Salvo';
-        setTimeout(() => syncSpan.innerHTML = '💾 Sincronizado', 2000);
-    } catch(e) {
-        syncSpan.innerHTML = '❌ Erro ao salvar';
-    }
-}
-
-function criarBotoesDias() {
-    const container = document.getElementById('botoesDias');
-    container.innerHTML = '';
-    for (let i = 0; i < DIAS; i++) {
-        const btn = document.createElement('button');
-        btn.classList.add('btn-dia');
-        btn.setAttribute('data-dia', i);
-        btn.innerHTML = `<span class="dia-num">${String(i+1).padStart(2,'00')}</span><span class="dia-total"></span>`;
-        let touchTimer = null, isLongPress = false;
-        btn.addEventListener('touchstart', (e) => {
-            e.preventDefault(); isLongPress = false;
-            touchTimer = setTimeout(() => { isLongPress=true; selecionarDia(i,btn); mostrarDisponiveis(i); }, 500);
-        });
-        btn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            if (touchTimer) clearTimeout(touchTimer);
-            if (!isLongPress) { selecionarDia(i,btn); if(isEditing) ativarEdicaoDia(i); else mostrarComparativoDia(i); }
-        });
-        btn.addEventListener('touchcancel', () => { if (touchTimer) clearTimeout(touchTimer); });
-        btn.onclick = () => { selecionarDia(i,btn); if(isEditing) ativarEdicaoDia(i); else mostrarComparativoDia(i); };
-        btn.oncontextmenu = (e) => { e.preventDefault(); selecionarDia(i,btn); mostrarDisponiveis(i); return false; };
-        container.appendChild(btn);
-    }
-    atualizarTotaisBotoesDias();
-}
-
-function selecionarDia(i, btn) {
-    document.querySelectorAll('.btn-dia').forEach(b => b.classList.remove('dia-selecionado'));
-    btn.classList.add('dia-selecionado');
-    diaReferencia = i;
-}
-
-function exibirModalSenha() {
-    return new Promise((resolve) => {
-        const modalDiv = document.createElement('div');
-        modalDiv.className = 'modal-senha';
-        modalDiv.innerHTML = `
-            <div class="card-senha">
-                <h3>🔐 AUTENTICAÇÃO</h3>
-                <p>Digite a senha para editar:</p>
-                <input type="password" id="senhaInput" placeholder="Senha" autocomplete="off">
-                <div class="botoes-senha">
-                    <button class="btn-modal" id="confirmarSenha">Confirmar</button>
-                    <button class="btn-modal" id="cancelarSenha">Cancelar</button>
-                </div>
-            </div>`;
-        document.body.appendChild(modalDiv);
-        const inputSenha = modalDiv.querySelector('#senhaInput');
-        const confirmar = () => { const s=inputSenha.value; modalDiv.remove(); resolve(s); };
-        const cancelar = () => { modalDiv.remove(); resolve(null); };
-        modalDiv.querySelector('#confirmarSenha').onclick = confirmar;
-        modalDiv.querySelector('#cancelarSenha').onclick = cancelar;
-        inputSenha.focus();
-        inputSenha.addEventListener('keypress', (e) => { if(e.key==='Enter') confirmar(); });
-    });
-}
-
-async function login() {
-    if (isEditing) { showToast("⚠️ Já está editando."); return; }
-    const senha = await exibirModalSenha();
-    if (senha === "Emerson" || senha === "Bispo") {
-        password = senha;
-        isEditing = true;
-        document.getElementById('statusBadge').innerHTML = '🔓 EDIÇÃO ATIVA';
-        document.getElementById('editModeChip').innerHTML = '✏️ EDIÇÃO ATIVO';
-        document.getElementById('btnLimpar').disabled = false;
-        document.getElementById('btnBloquear').disabled = false;
-        showToast("✅ Edição ativada! Toque num dia para editar a coluna.");
-    } else if (senha !== null) {
-        showToast("❌ Senha incorreta.");
-    }
-}
-
-function bloquear() {
-    if (!isEditing) { showToast("ℹ️ Já está em modo leitura."); return; }
-    isEditing = false;
-    password = "";
-    sairEdicaoDia();
-    document.getElementById('statusBadge').innerHTML = '🔒 SOMENTE LEITURA';
-    document.getElementById('editModeChip').innerHTML = '📖 MODO VISUALIZAÇÃO';
-    document.getElementById('btnLimpar').disabled = true;
-    document.getElementById('btnBloquear').disabled = true;
-    showToast("🔒 Modo leitura ativado.");
-}
-
-function limpar() {
-    if (!isEditing) return showToast("⚠️ Desbloqueie primeiro.");
-    if (confirm("Limpar todos os valores?")) {
-        document.querySelectorAll('.input-hora').forEach(inp => {
-            inp.value = '';
-        });
-        recalcularTudo();
-        salvarNoBackend();
-        showToast("🧹 Valores limpos.");
-    }
-}
-
-document.getElementById('btnDesbloquear').onclick = login;
-document.getElementById('btnBloquear').onclick = bloquear;
-document.getElementById('btnLimpar').onclick = limpar;
-document.getElementById('btnSairDia').onclick = sairEdicaoDia;
-
-carregarDoBackend();
+  })();
 </script>
+
 </body>
-                                                                                                </html>
+</html>
