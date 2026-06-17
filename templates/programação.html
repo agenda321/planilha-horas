@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Programação Operacional</title>
+<style>
+:root {
+  --bg:          #080F1A;
+  --surface:     #0E1C2F;
+  --card:        #111E33;
+  --pax:         #3B9EFF;
+  --pax-glow:    rgba(59,158,255,0.15);
+  --carga:       #FF9A3C;
+  --carga-glow:  rgba(255,154,60,0.15);
+  --remocao:     #FF4D6A;
+  --remocao-glow:rgba(255,77,106,0.15);
+  --vazio:       #94A3B8;
+  --vazio-glow:  rgba(148,163,184,0.12);
+  --caravan:     #2DD4BF;
+  --cessna:      #A78BFA;
+  --gold:        #F5C542;
+  --text:        #E8F0FE;
+  --sub:         #8BA8C8;
+  --faint:       #3D567A;
+  --ciente:      #4ADE80;
+  --radius:      12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-serif;padding:12px 12px 60px;padding-top:110px}
+.page{max-width:520px;margin:0 auto}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#0E2040 0%,#142D55 100%);
+  border:1px solid var(--faint);border-radius:0 0 16px 16px;
+  text-align:center;padding:14px 16px 12px;
+  position:sticky;top:0;z-index:200;
+  box-shadow:0 4px 20px rgba(0,0,0,0.6);
+}
+.header::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(59,158,255,0.12) 0%,transparent 70%);
+  pointer-events:none}
+.header-eyebrow{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:3px}
+.header-title{font-size:18px;font-weight:800;letter-spacing:1px;color:#fff}
+.header-date-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;flex-wrap:wrap}
+.date-nav{background:rgba(255,255,255,0.08);border:1px solid var(--faint);
+  color:var(--sub);border-radius:6px;padding:3px 10px;font-size:13px;cursor:pointer;
+  transition:background .2s}
+.date-nav:hover{background:rgba(255,255,255,0.15);color:#fff}
+.date-display{font-size:13px;font-weight:700;color:var(--gold);
+  background:rgba(245,197,66,0.1);border:1px solid rgba(245,197,66,0.25);
+  border-radius:6px;padding:3px 12px;cursor:pointer;min-width:110px;text-align:center}
+.header-actions{display:flex;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+.btn-header{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  padding:4px 12px;border-radius:6px;border:none;cursor:pointer;transition:all .2s}
+.btn-importar{background:var(--gold);color:#000}
+.btn-importar:hover{background:#e0b032}
+.btn-clonar{background:rgba(59,158,255,0.15);color:var(--pax);border:1px solid rgba(59,158,255,0.3)}
+.btn-clonar:hover{background:rgba(59,158,255,0.3)}
+.btn-add-voo{background:rgba(74,222,128,0.15);color:var(--ciente);border:1px solid rgba(74,222,128,0.3)}
+.btn-add-voo:hover{background:rgba(74,222,128,0.3)}
+.btn-apagar-dia{background:rgba(255,77,106,0.12);color:var(--remocao);border:1px solid rgba(255,77,106,0.25)}
+.btn-apagar-dia:hover{background:rgba(255,77,106,0.25)}
+
+/* ── STATS BAR ── */
+.stats-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.stat-chip{flex:1;min-width:70px;background:var(--surface);border-radius:8px;
+  padding:8px 10px;text-align:center;border:1px solid rgba(255,255,255,0.05)}
+.stat-num{font-size:20px;font-weight:800;color:#fff}
+.stat-label{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--sub);margin-top:2px}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:48px 24px;color:var(--sub)}
+.empty-state h2{font-size:16px;color:var(--faint);margin-bottom:8px}
+.empty-state p{font-size:13px;line-height:1.6}
+.empty-state .empty-icon{font-size:40px;margin-bottom:12px;opacity:.4}
+
+/* ── AERONAVE BLOCK ── */
+.ac-block{margin-bottom:24px}
+.ac-header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px 10px 0 0;margin-bottom:1px}
+.ac-header.cessna{background:linear-gradient(90deg,#2A1F5A,#1A1540);border-bottom:2px solid var(--cessna)}
+.ac-header.caravan{background:linear-gradient(90deg,#0D2E2A,#0A1E1C);border-bottom:2px solid var(--caravan)}
+.ac-icon{font-size:18px}
+.ac-name{font-size:13px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase}
+.ac-name.cessna{color:var(--cessna)}
+.ac-name.caravan{color:var(--caravan)}
+.ac-count{margin-left:auto;font-size:11px;color:var(--sub);background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:20px}
+
+/* ── CLIENT BLOCK ── */
+.client-block{background:var(--surface);border-radius:0 0 10px 10px;overflow:hidden;margin-bottom:10px}
+.client-label{padding:6px 14px;font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--sub);border-bottom:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.03)}
+
+/* ── FLIGHT CARD ── */
+.flight-card{display:flex;background:var(--card);border-bottom:1px solid rgba(255,255,255,0.04);position:relative}
+.flight-card:last-child{border-bottom:none}
+.type-bar{width:4px;flex-shrink:0}
+.type-bar.pax{background:var(--pax)}
+.type-bar.carga{background:var(--carga)}
+.type-bar.remocao{background:var(--remocao);animation:pulse-r 1.2s ease-in-out infinite}
+.type-bar.vazio{background:var(--vazio)}
+@keyframes pulse-r{0%{opacity:1}50%{opacity:.4}100%{opacity:1}}
+.card-body{flex:1;padding:10px 12px}
+.card-top{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+.type-badge{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;border-radius:4px}
+.type-badge.pax{background:var(--pax-glow);color:var(--pax);border:1px solid rgba(59,158,255,.4)}
+.type-badge.carga{background:var(--carga-glow);color:var(--carga);border:1px solid rgba(255,154,60,.4)}
+.type-badge.remocao{background:var(--remocao-glow);color:var(--remocao);border:1px solid rgba(255,77,106,.4);animation:pulse-r 1.2s ease-in-out infinite}
+.type-badge.vazio{background:var(--vazio-glow);color:var(--vazio);border:1px solid rgba(148,163,184,.3)}
+.card-reg{font-size:14px;font-weight:800;letter-spacing:2px;color:#fff}
+.card-reg.tbd{color:var(--faint)}
+.card-oma{margin-left:auto;font-size:10px;font-family:monospace;color:var(--gold);
+  background:rgba(245,197,66,.1);padding:2px 7px;border-radius:4px;
+  border:1px solid rgba(245,197,66,.25);cursor:pointer;transition:background .2s}
+.card-oma:hover{background:rgba(245,197,66,.2)}
+.card-crew{font-size:12px;color:var(--sub);margin-bottom:6px;
+  display:flex;align-items:center;flex-wrap:wrap;gap:3px 6px;user-select:none}
+.crew-name{display:inline-flex;align-items:center;gap:4px;cursor:pointer;
+  padding:2px 5px;border-radius:4px;transition:background .2s,color .2s}
+.crew-name:hover{background:rgba(255,255,255,.05)}
+.crew-dot{width:5px;height:5px;border-radius:50%;background:var(--sub);opacity:.5;flex-shrink:0;transition:all .2s}
+.crew-name.ciente{color:var(--ciente);font-weight:700}
+.crew-name.ciente .crew-dot{background:var(--ciente);opacity:1}
+.crew-sep{color:var(--faint);font-weight:300;margin:0 2px}
+.card-route{display:flex;align-items:center;flex-wrap:wrap;gap:3px;margin-bottom:6px}
+.rpt{font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;
+  background:rgba(255,255,255,.06);color:var(--text);letter-spacing:.5px}
+.rpt.home{background:rgba(59,158,255,.1);color:var(--pax)}
+.rarrow{font-size:9px;color:var(--faint)}
+.card-obs{font-size:11px;color:#7A9EC0;line-height:1.5;
+  padding-top:6px;border-top:1px solid rgba(255,255,255,.05)}
+.card-actions{display:flex;gap:6px;margin-top:8px;justify-content:flex-end}
+.btn-card{font-size:10px;padding:3px 9px;border-radius:4px;border:none;
+  cursor:pointer;font-weight:600;transition:all .2s}
+.btn-edit-card{background:rgba(245,197,66,.12);color:var(--gold)}
+.btn-edit-card:hover{background:rgba(245,197,66,.25)}
+.btn-del-card{background:rgba(255,77,106,.1);color:var(--remocao)}
+.btn-del-card:hover{background:rgba(255,77,106,.25)}
+
+/* ── PEOPLE SECTIONS ── */
+.people-section{border-radius:var(--radius);overflow:hidden;margin-bottom:12px}
+.people-header{display:flex;align-items:center;gap:8px;padding:9px 14px;
+  font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase}
+.people-header.coord{background:#1A1F3A;color:#9B8FFF;border-bottom:2px solid #4A3FA0}
+.people-header.stand-voare{background:#0F2030;color:var(--pax);border-bottom:2px solid #1E5080}
+.people-header.stand-gen{background:#0F1E10;color:#4ADE80;border-bottom:2px solid #1A5020}
+.people-header.folga{background:#1A1410;color:#FB923C;border-bottom:2px solid #7C2D12}
+.people-body{background:var(--surface);padding:10px 12px;display:flex;flex-wrap:wrap;gap:6px}
+.person-chip{font-size:12px;font-weight:600;padding:4px 11px;border-radius:20px;cursor:default}
+.person-chip.coord{background:rgba(155,143,255,.12);color:#C4BDFF;border:1px solid rgba(155,143,255,.25)}
+.person-chip.stand-voare{background:rgba(59,158,255,.1);color:#7EC8FF;border:1px solid rgba(59,158,255,.2)}
+.person-chip.stand-gen{background:rgba(74,222,128,.1);color:#86EFAC;border:1px solid rgba(74,222,128,.2)}
+.person-chip.folga{background:rgba(251,146,60,.1);color:#FCA35D;border:1px solid rgba(251,146,60,.2)}
+
+/* ── FOOTER ── */
+.footer{text-align:center;margin-top:24px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--faint)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:#1E3A5F;border:1px solid var(--faint);color:var(--text);
+  padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;
+  z-index:9999;transition:transform .3s ease;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success{background:#0F2E1A;border-color:#1A5020;color:var(--ciente)}
+.toast.error{background:#2E0F1A;border-color:#5A1020;color:var(--remocao)}
+
+/* ── MODAL OVERLAY ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);
+  backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;
+  z-index:1000;padding:16px;opacity:0;pointer-events:none;transition:opacity .25s}
+.modal-overlay.active{opacity:1;pointer-events:auto}
+.modal-box{background:var(--surface);border:1px solid var(--faint);border-radius:var(--radius);
+  max-width:440px;width:100%;padding:22px 20px 18px;
+  box-shadow:0 20px 40px rgba(0,0,0,.6);transform:scale(.95);transition:transform .2s}
+.modal-overlay.active .modal-box{transform:scale(1)}
+.modal-close{float:right;background:none;border:none;color:var(--faint);font-size:20px;cursor:pointer;padding:0 4px}
+.modal-close:hover{color:#fff}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:14px;color:#fff}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--sub);margin-bottom:4px}
+.field input,.field select,.field textarea{
+  width:100%;padding:8px 11px;border-radius:6px;background:var(--bg);
+  border:1px solid var(--faint);color:var(--text);font-size:13px;outline:none;transition:border .2s;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold)}
+.field textarea{resize:vertical;min-height:56px}
+.field select{cursor:pointer}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+.btn-modal{padding:7px 16px;border:none;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;transition:background .2s}
+.btn-primary{background:var(--gold);color:#000}
+.btn-primary:hover{background:#e0b032}
+.btn-secondary{background:rgba(255,255,255,.08);color:var(--sub)}
+.btn-secondary:hover{background:rgba(255,255,255,.15)}
+.btn-danger{background:rgba(255,77,106,.15);color:var(--remocao)}
+.btn-danger:hover{background:rgba(255,77,106,.3)}
+
+/* ── IMPORT MODAL ── */
+.import-textarea{width:100%;min-height:200px;padding:10px;border-radius:6px;
+  background:var(--bg);border:1px solid var(--faint);color:var(--text);
+  font-size:12px;font-family:monospace;line-height:1.5;resize:vertical;outline:none}
+.import-textarea:focus{border-color:var(--gold)}
+.preview-box{background:var(--bg);border:1px solid var(--faint);border-radius:8px;
+  padding:12px;margin-top:10px;max-height:260px;overflow-y:auto;font-size:12px;line-height:1.6}
+.preview-section{margin-bottom:10px}
+.preview-section h4{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;
+  color:var(--gold);margin-bottom:6px}
+.preview-voo{background:rgba(255,255,255,.04);border-radius:6px;padding:7px 10px;margin-bottom:5px;font-size:12px}
+.preview-voo strong{color:#fff}
+.preview-erros{background:rgba(255,77,106,.08);border:1px solid rgba(255,77,106,.2);
+  border-radius:6px;padding:8px 10px;color:var(--remocao);font-size:11px}
+.preview-erros h4{color:var(--remocao);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+
+/* ── DATE PICKER MODAL ── */
+.date-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:4px}
+.date-option{background:rgba(255,255,255,.05);border:1px solid var(--faint);
+  border-radius:6px;padding:8px 10px;cursor:pointer;text-align:center;
+  font-size:12px;color:var(--sub);transition:all .2s}
+.date-option:hover,.date-option.selected{background:rgba(245,197,66,.12);
+  border-color:rgba(245,197,66,.4);color:var(--gold)}
+.date-input-row{display:flex;gap:8px;align-items:center;margin-top:10px}
+.date-input-row input[type="date"]{flex:1;padding:7px 10px;border-radius:6px;
+  background:var(--bg);border:1px solid var(--faint);color:var(--text);font-size:13px;outline:none}
+.date-input-row input[type="date"]:focus{border-color:var(--gold)}
+
+/* ── LOADING ── */
+.loading{text-align:center;padding:40px;color:var(--sub);font-size:13px}
+.loading-spinner{width:28px;height:28px;border:2px solid var(--faint);
+  border-top-color:var(--pax);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── DETAIL MODAL ── */
+.detail-row{display:flex;gap:8px;margin-bottom:8px;font-size:13px;align-items:flex-start}
+.detail-label{color:var(--sub);font-weight:600;min-width:90px;flex-shrink:0}
+.detail-value{color:var(--text);line-height:1.5}
+.detail-value.highlight{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-eyebrow">📋 Demanda Operacional</div>
+  <div class="header-title">PROGRAMAÇÃO</div>
+  <div class="header-date-row">
+    <button class="date-nav" id="btnDiaAnterior">‹</button>
+    <span class="date-display" id="dateDisplay" title="Clique para escolher data">...</span>
+    <button class="date-nav" id="btnProximoDia">›</button>
+  </div>
+  <div class="header-actions">
+    <button class="btn-header btn-importar" id="btnImportar">⬆ Importar</button>
+    <button class="btn-header btn-clonar" id="btnClonar">⧉ Clonar dia anterior</button>
+    <button class="btn-header btn-add-voo" id="btnAddVoo">+ Voo</button>
+    <button class="btn-header btn-apagar-dia" id="btnApagarDia">🗑 Apagar dia</button>
+  </div>
+</div>
+
+<!-- CONTEÚDO PRINCIPAL -->
+<div id="statsBar" class="stats-bar" style="display:none"></div>
+<div id="mainContent">
+  <div class="loading"><div class="loading-spinner"></div>Carregando...</div>
+</div>
+
+<div class="footer" id="footerTxt">Programação Operacional</div>
+</div>
+
+<!-- ═══ MODAL: IMPORTAR ═══ -->
+<div class="modal-overlay" id="modalImportar">
+  <div class="modal-box" style="max-width:500px">
+    <button class="modal-close" data-close="modalImportar">✕</button>
+    <div class="modal-title">⬆ Importar Programação</div>
+
+    <div id="importStep1">
+      <div class="field">
+        <label>Data da programação</label>
+        <input type="date" id="importData">
+      </div>
+      <div class="field">
+        <label>Cole o texto recebido pelo WhatsApp</label>
+        <textarea class="import-textarea" id="importTexto" placeholder="Cole aqui o texto completo da programação..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal btn-secondary" data-close="modalImportar">Cancelar</button>
+        <button class="btn-modal btn-primary" id="btnParseTexto">🔍 Interpretar</button>
+      </div>
+    </div>
+
+    <div id="importStep2" style="display:none">
+      <div id="importPreview" class="preview-box"></div>
+      <div class="modal-actions" style="margin-top:10px">
+        <button class="btn-modal btn-secondary" id="btnVoltarImport">‹ Voltar</button>
+        <button class="btn-modal btn-primary" id="btnConfirmarImport">✓ Salvar Programação</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: ESCOLHER DATA ═══ -->
+<div class="modal-overlay" id="modalData">
+  <div class="modal-box" style="max-width:340px">
+    <button class="modal-close" data-close="modalData">✕</button>
+    <div class="modal-title">📅 Escolher Data</div>
+    <div id="dateOptions" class="date-grid"></div>
+    <div class="date-input-row">
+      <input type="date" id="customDateInput">
+      <button class="btn-modal btn-primary" id="btnGoDate">Ir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: DETALHES DO VOO ═══ -->
+<div class="modal-overlay" id="modalDetalhe">
+  <div class="modal-box">
+    <button class="modal-close" data-close="modalDetalhe">✕</button>
+    <div class="modal-title" id="detalheTitulo">Detalhes do Voo</div>
+    <div id="detalheConteudo"></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: EDITAR VOO ═══ -->
+<div class="modal-overlay" id="modalEditarVoo">
+  <div class="modal-box">
+    <button class="modal-close" data-close="modalEditarVoo">✕</button>
+    <div class="modal-title" id="editVooTitulo">✏️ Editar Voo</div>
+    <input type="hidden" id="editVooId">
+    <div class="field">
+      <label>Tipo</label>
+      <select id="editTipo">
+        <option value="Pax">🧍 Pax</option>
+        <option value="Carga">📦 Carga</option>
+        <option value="Remoção">🚑 Remoção</option>
+        <option value="Vazio">○ Vazio</option>
+        <option value="Ferry">✈ Ferry</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>OMA Nº</label>
+      <input type="text" id="editOma" placeholder="Ex: 3025">
+    </div>
+    <div class="field">
+      <label>Matrícula</label>
+      <input type="text" id="editMatricula" placeholder="Ex: JSA" maxlength="10">
+    </div>
+    <div class="field">
+      <label>Comandante</label>
+      <input type="text" id="editCmte" placeholder="Nome do comandante">
+    </div>
+    <div class="field">
+      <label>Copiloto (opcional)</label>
+      <input type="text" id="editCopiloto" placeholder="Nome do copiloto">
+    </div>
+    <div class="field">
+      <label>Rota (separe por /)</label>
+      <input type="text" id="editRota" placeholder="Ex: Swpd/Surucucu/Swpd">
+    </div>
+    <div class="field">
+      <label>Observação</label>
+      <textarea id="editObs" rows="2" placeholder="Observações do voo..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal btn-secondary" data-close="modalEditarVoo">Cancelar</button>
+      <button class="btn-modal btn-primary" id="btnSalvarEdicao">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: ADICIONAR VOO ═══ -->
+<div class="modal-overlay" id="modalAddVoo">
+  <div class="modal-box">
+    <button class="modal-close" data-close="modalAddVoo">✕</button>
+    <div class="modal-title">➕ Adicionar Voo</div>
+    <div class="field">
+      <label>Aeronave</label>
+      <select id="addAeronave">
+        <option value="CESSNA 206/210">✈️ Cessna 206/210</option>
+        <option value="CARAVAN">🛩️ Caravan 208</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Cliente</label>
+      <input type="text" id="addCliente" placeholder="Ex: Yanomami, Leste, Voare" value="Yanomami">
+    </div>
+    <div class="field">
+      <label>Tipo</label>
+      <select id="addTipo">
+        <option value="Pax">🧍 Pax</option>
+        <option value="Carga">📦 Carga</option>
+        <option value="Remoção">🚑 Remoção</option>
+        <option value="Vazio">○ Vazio</option>
+        <option value="Ferry">✈ Ferry</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>OMA Nº (opcional)</label>
+      <input type="text" id="addOma" placeholder="Ex: 3025">
+    </div>
+    <div class="field">
+      <label>Matrícula</label>
+      <input type="text" id="addMatricula" placeholder="Ex: JSA" maxlength="10">
+    </div>
+    <div class="field">
+      <label>Comandante</label>
+      <input type="text" id="addCmte" placeholder="Nome do comandante">
+    </div>
+    <div class="field">
+      <label>Copiloto (opcional)</label>
+      <input type="text" id="addCopiloto" placeholder="Nome do copiloto">
+    </div>
+    <div class="field">
+      <label>Rota (separe por /)</label>
+      <input type="text" id="addRota" placeholder="Ex: Swpd/Surucucu/Swpd">
+    </div>
+    <div class="field">
+      <label>Observação</label>
+      <textarea id="addObs" rows="2"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal btn-secondary" data-close="modalAddVoo">Cancelar</button>
+      <button class="btn-modal btn-primary" id="btnConfirmarAddVoo">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  let dataAtual = "{{ data_atual }}";
+  let dadosDia = null;
+  let parsedPreview = null;
+
+  function fmt(data_iso){
+    const [y,m,d] = data_iso.split('-');
+    const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const dias  = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    const dt = new Date(+y, +m-1, +d);
+    return `${dias[dt.getDay()]}, ${d}/${m}/${y}`;
+  }
+
+  function tipoClass(tipo){
+    const t = (tipo||'').toLowerCase();
+    if(t==='pax') return 'pax';
+    if(t==='carga') return 'carga';
+    if(t.includes('remo')) return 'remocao';
+    return 'vazio';
+  }
+
+  function tipoIcon(tipo){
+    const m = {'Pax':'🧍 Pax','Carga':'📦 Carga','Remoção':'🚑 Remoção','Vazio':'○ Vazio','Ferry':'✈ Ferry'};
+    return m[tipo] || tipo;
+  }
+
+  function showToast(msg, tipo=''){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (tipo ? ' '+tipo : '');
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(()=> t.classList.remove('show'), 3000);
+  }
+
+  function openModal(id){ document.getElementById(id).classList.add('active') }
+  function closeModal(id){ document.getElementById(id).classList.remove('active') }
+
+  document.querySelectorAll('.modal-close, [data-close]').forEach(el=>{
+    el.addEventListener('click', ()=> closeModal(el.dataset.close || el.closest('.modal-overlay').id));
+  });
+  document.querySelectorAll('.modal-overlay').forEach(el=>{
+    el.addEventListener('click', e=>{ if(e.target===el) closeModal(el.id) });
+  });
+
+  function addDias(data_iso, n){
+    const [y,m,d] = data_iso.split('-').map(Number);
+    const dt = new Date(y,m-1,d);
+    dt.setDate(dt.getDate()+n);
+    return dt.toISOString().split('T')[0];
+  }
+
+  function setData(data_iso){
+    dataAtual = data_iso;
+    document.getElementById('dateDisplay').textContent = fmt(data_iso);
+    document.title = `Prog. ${data_iso.split('-').reverse().join('/')}`;
+    history.replaceState(null,'',`/programacao/${data_iso}`);
+    carregarDia();
+  }
+
+  document.getElementById('btnDiaAnterior').addEventListener('click', ()=> setData(addDias(dataAtual,-1)));
+  document.getElementById('btnProximoDia').addEventListener('click', ()=> setData(addDias(dataAtual,+1)));
+  document.getElementById('dateDisplay').addEventListener('click', abrirModalData);
+
+  async function abrirModalData(){
+    const opts = document.getElementById('dateOptions');
+    opts.innerHTML = '<div style="color:var(--sub);font-size:11px;grid-column:span 2">Carregando datas...</div>';
+    openModal('modalData');
+    try{
+      const r = await fetch('/api/programacao/datas');
+      const j = await r.json();
+      const datas = j.datas || [];
+      if(!datas.length){
+        opts.innerHTML = '<div style="color:var(--faint);font-size:11px;grid-column:span 2">Nenhuma programação salva ainda.</div>';
+      } else {
+        opts.innerHTML = datas.map(d=>
+          `<div class="date-option${d===dataAtual?' selected':''}" data-date="${d}">${fmt(d)}</div>`
+        ).join('');
+        opts.querySelectorAll('.date-option').forEach(el=>{
+          el.addEventListener('click', ()=>{ closeModal('modalData'); setData(el.dataset.date); });
+        });
+      }
+    } catch(e){
+      opts.innerHTML = '<div style="color:var(--remocao);grid-column:span 2">Erro ao carregar datas.</div>';
+    }
+    document.getElementById('customDateInput').value = dataAtual;
+  }
+
+  document.getElementById('btnGoDate').addEventListener('click', ()=>{
+    const v = document.getElementById('customDateInput').value;
+    if(v){ closeModal('modalData'); setData(v); }
+  });
+
+  async function carregarDia(){
+    document.getElementById('mainContent').innerHTML =
+      '<div class="loading"><div class="loading-spinner"></div>Carregando...</div>';
+    document.getElementById('statsBar').style.display = 'none';
+    try{
+      const r = await fetch(`/api/programacao/${dataAtual}`);
+      const j = await r.json();
+      dadosDia = j;
+      renderDia(j);
+    } catch(e){
+      document.getElementById('mainContent').innerHTML =
+        '<div class="empty-state"><div class="empty-icon">⚠️</div><h2>Erro de conexão</h2><p>Não foi possível carregar a programação.</p></div>';
+    }
+  }
+
+  function renderDia(dados){
+    const main = document.getElementById('mainContent');
+    const stats = document.getElementById('statsBar');
+    const footer = document.getElementById('footerTxt');
+    footer.textContent = `Programação Operacional · ${dataAtual.split('-').reverse().join('/')}`;
+
+    const aeronaves = dados.aeronaves || {};
+    const total = dados.total_voos || 0;
+
+    if(!total){
+      main.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">✈️</div>
+          <h2>Sem programação para este dia</h2>
+          <p>Use <strong>Importar</strong> para colar o texto do WhatsApp,<br>
+          ou <strong>Clonar dia anterior</strong> para reaproveitar a base.</p>
+        </div>`;
+      stats.style.display = 'none';
+      return;
+    }
+
+    let totalPax=0, totalCarga=0, totalRemocao=0;
+    Object.values(aeronaves).forEach(clientes=>{
+      Object.values(clientes).forEach(voos=>{
+        voos.forEach(v=>{
+          if(v.tipo==='Pax') totalPax++;
+          else if(v.tipo==='Carga') totalCarga++;
+          else if(v.tipo==='Remoção') totalRemocao++;
+        });
+      });
+    });
+    stats.innerHTML = `
+      <div class="stat-chip"><div class="stat-num">${total}</div><div class="stat-label">Total</div></div>
+      <div class="stat-chip"><div class="stat-num" style="color:var(--pax)">${totalPax}</div><div class="stat-label">Pax</div></div>
+      <div class="stat-chip"><div class="stat-num" style="color:var(--carga)">${totalCarga}</div><div class="stat-label">Carga</div></div>
+      <div class="stat-chip"><div class="stat-num" style="color:var(--remocao)">${totalRemocao}</div><div class="stat-label">Remoção</div></div>`;
+    stats.style.display = 'flex';
+
+    const ORDEM_AC = ['CESSNA 206/210','CARAVAN'];
+    let html = '';
+
+    ORDEM_AC.forEach(ac=>{
+      if(!aeronaves[ac]) return;
+      const clientes = aeronaves[ac];
+      const totalAc = Object.values(clientes).reduce((s,v)=>s+v.length,0);
+      const isCaravan = ac==='CARAVAN';
+      html += `
+      <div class="ac-block">
+        <div class="ac-header ${isCaravan?'caravan':'cessna'}">
+          <span class="ac-icon">${isCaravan?'🛩️':'✈️'}</span>
+          <span class="ac-name ${isCaravan?'caravan':'cessna'}">${ac}</span>
+          <span class="ac-count">${totalAc} voo${totalAc!==1?'s':''}</span>
+        </div>`;
+      Object.entries(clientes).forEach(([cliente, voos])=>{
+        html += `<div class="client-block"><div class="client-label">✦ ${cliente}</div>`;
+        voos.forEach(v=> html += renderCard(v));
+        html += `</div>`;
+      });
+      html += `</div>`;
+    });
+
+    Object.keys(aeronaves).forEach(ac=>{
+      if(ORDEM_AC.includes(ac)) return;
+      const clientes = aeronaves[ac];
+      const totalAc = Object.values(clientes).reduce((s,v)=>s+v.length,0);
+      html += `
+      <div class="ac-block">
+        <div class="ac-header cessna">
+          <span class="ac-icon">✈️</span>
+          <span class="ac-name cessna">${ac}</span>
+          <span class="ac-count">${totalAc} voo${totalAc!==1?'s':''}</span>
+        </div>`;
+      Object.entries(clientes).forEach(([cliente, voos])=>{
+        html += `<div class="client-block"><div class="client-label">✦ ${cliente}</div>`;
+        voos.forEach(v=> html += renderCard(v));
+        html += `</div>`;
+      });
+      html += `</div>`;
+    });
+
+    const sb = dados.stand_by || [];
+    const sbv = dados.stand_by_voare || [];
+    const fr = dados.folga_regular || [];
+    const coord = dados.coordenacao || [];
+
+    if(coord.length) html += renderPeople('🎯 Coordenação','coord',coord);
+    if(sbv.length)   html += renderPeople('🛫 Stand By — Voare','stand-voare',sbv);
+    if(sb.length)    html += renderPeople('⏳ Stand By','stand-gen',sb);
+    if(fr.length)    html += renderPeople('🌿 Folga Regular','folga',fr);
+
+    main.innerHTML = html;
+    bindCardEvents();
+  }
+
+  function renderCard(v){
+    const tc = tipoClass(v.tipo);
+    const nomes = (v.tripulacao||'').split('/').map(n=>n.trim()).filter(Boolean);
+    const rota  = (v.rota||'').split('/').map(r=>r.trim()).filter(Boolean);
+    const matriculaTbd = (!v.matricula || v.matricula.includes('×'));
+
+    const crewHtml = nomes.map((n,i)=>{
+      const aNome = n.trim();
+      const ciente = (v.ciencias||{})[aNome] === true;
+      return (i>0?'<span class="crew-sep">/</span>':'')+
+        `<span class="crew-name${ciente?' ciente':''}" data-voo-id="${v.id}" data-nome="${aNome}">
+          <span class="crew-dot"></span>${aNome}
+        </span>`;
+    }).join('');
+
+    const rotaHtml = rota.map((r,i)=>{
+      const home = (i===0||i===rota.length-1);
+      return (i>0?'<span class="rarrow">›</span>':'')+
+        `<span class="rpt${home?' home':''}">${r}</span>`;
+    }).join('');
+
+    const omaLabel = v.oma ? `<span class="card-oma" data-voo-id="${v.id}">#${v.oma}</span>` :
+      `<span class="card-oma" data-voo-id="${v.id}" title="Sem OMA">—</span>`;
+
+    return `
+    <div class="flight-card" data-id="${v.id}">
+      <div class="type-bar ${tc}"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="type-badge ${tc}">${tipoIcon(v.tipo)}</span>
+          <span class="card-reg${matriculaTbd?' tbd':''}">${v.matricula||'××-××'}</span>
+          ${omaLabel}
+        </div>
+        <div class="card-crew">${crewHtml||'<span style="color:var(--faint)">A definir</span>'}</div>
+        <div class="card-route">${rotaHtml}</div>
+        ${v.obs?`<div class="card-obs">${v.obs}</div>`:''}
+        <div class="card-actions">
+          <button class="btn-card btn-edit-card" data-voo-id="${v.id}">✏️ Editar</button>
+          <button class="btn-card btn-del-card" data-voo-id="${v.id}">🗑 Excluir</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderPeople(titulo, cls, nomes){
+    return `
+    <div class="people-section">
+      <div class="people-header ${cls}">${titulo}</div>
+      <div class="people-body">
+        ${nomes.map(n=>`<span class="person-chip ${cls}">${n}</span>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  function bindCardEvents(){
+    document.querySelectorAll('.crew-name').forEach(el=>{
+      el.addEventListener('click', async function(e){
+        e.stopPropagation();
+        const vooId = +this.dataset.vooId;
+        const nome = this.dataset.nome;
+        const novoCiente = !this.classList.contains('ciente');
+        try{
+          await fetch('/api/programacao/ciente',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({voo_id:vooId, nome, ciente:novoCiente})
+          });
+          this.classList.toggle('ciente', novoCiente);
+          showToast(novoCiente ? `✅ ${nome} ciente` : `${nome} desmarcado`);
+        } catch(e){ showToast('Erro ao salvar','error') }
+      });
+    });
+
+    document.querySelectorAll('.card-oma').forEach(el=>{
+      el.addEventListener('click', function(e){
+        e.stopPropagation();
+        abrirDetalhe(+this.dataset.vooId);
+      });
+    });
+
+    document.querySelectorAll('.btn-edit-card').forEach(el=>{
+      el.addEventListener('click', function(e){
+        e.stopPropagation();
+        abrirEditarVoo(+this.dataset.vooId);
+      });
+    });
+
+    document.querySelectorAll('.btn-del-card').forEach(el=>{
+      el.addEventListener('click', async function(e){
+        e.stopPropagation();
+        if(!confirm('Excluir este voo?')) return;
+        try{
+          const r = await fetch(`/api/programacao/voo/${this.dataset.vooId}`,{method:'DELETE'});
+          const j = await r.json();
+          if(j.success){ showToast('Voo excluído','success'); carregarDia(); }
+        } catch(e){ showToast('Erro ao excluir','error') }
+      });
+    });
+  }
+
+  function abrirDetalhe(vooId){
+    if(!dadosDia) return;
+    let voo = null;
+    Object.values(dadosDia.aeronaves||{}).forEach(clientes=>{
+      Object.values(clientes).forEach(voos=>{
+        const found = voos.find(v=>v.id===vooId);
+        if(found) voo = found;
+      });
+    });
+    if(!voo) return;
+    document.getElementById('detalheTitulo').textContent = voo.oma ? `OMA #${voo.oma}` : 'Detalhes do Voo';
+    document.getElementById('detalheConteudo').innerHTML = `
+      <div class="detail-row"><span class="detail-label">Tipo</span><span class="detail-value">${tipoIcon(voo.tipo)}</span></div>
+      <div class="detail-row"><span class="detail-label">Matrícula</span><span class="detail-value">${voo.matricula||'——'}</span></div>
+      <div class="detail-row"><span class="detail-label">Tripulação</span><span class="detail-value">${voo.tripulacao||'A definir'}</span></div>
+      <div class="detail-row"><span class="detail-label">Rota</span><span class="detail-value highlight">${(voo.rota||'').replace(/\//g,' › ')}</span></div>
+      ${voo.obs?`<div class="detail-row"><span class="detail-label">Obs</span><span class="detail-value">${voo.obs}</span></div>`:''}
+    `;
+    openModal('modalDetalhe');
+  }
+
+  function abrirEditarVoo(vooId){
+    if(!dadosDia) return;
+    let voo = null;
+    Object.values(dadosDia.aeronaves||{}).forEach(clientes=>{
+      Object.values(clientes).forEach(voos=>{
+        const found = voos.find(v=>v.id===vooId);
+        if(found) voo = found;
+      });
+    });
+    if(!voo) return;
+    document.getElementById('editVooId').value = vooId;
+    document.getElementById('editVooTitulo').textContent = `✏️ Editar Voo${voo.oma?' #'+voo.oma:''}`;
+    document.getElementById('editTipo').value = voo.tipo||'Pax';
+    document.getElementById('editOma').value = voo.oma||'';
+    document.getElementById('editMatricula').value = (voo.matricula||'').includes('×')?'':(voo.matricula||'');
+    const nomes = (voo.tripulacao||'').split('/').map(n=>n.trim());
+    document.getElementById('editCmte').value = nomes[0]||'';
+    document.getElementById('editCopiloto').value = nomes[1]||'';
+    document.getElementById('editRota').value = voo.rota||'';
+    document.getElementById('editObs').value = voo.obs||'';
+    openModal('modalEditarVoo');
+  }
+
+  document.getElementById('btnSalvarEdicao').addEventListener('click', async function(){
+    const id = document.getElementById('editVooId').value;
+    const cmte = document.getElementById('editCmte').value.trim();
+    const cop  = document.getElementById('editCopiloto').value.trim();
+    const trip = cop ? [cmte, cop] : [cmte];
+    const mat  = document.getElementById('editMatricula').value.trim() || '××-××';
+    const rota = document.getElementById('editRota').value.trim().split('/').map(r=>r.trim()).filter(Boolean);
+    try{
+      const r = await fetch(`/api/programacao/voo/${id}`,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          tipo:document.getElementById('editTipo').value,
+          oma:document.getElementById('editOma').value.trim(),
+          matricula:mat, tripulacao:trip, rota:rota,
+          obs:document.getElementById('editObs').value.trim(),
+        })
+      });
+      const j = await r.json();
+      if(j.success){ closeModal('modalEditarVoo'); showToast('Voo atualizado','success'); carregarDia(); }
+      else showToast('Erro ao salvar','error');
+    } catch(e){ showToast('Erro de conexão','error') }
+  });
+
+  document.getElementById('btnAddVoo').addEventListener('click', ()=>{
+    document.getElementById('addOma').value='';
+    document.getElementById('addMatricula').value='';
+    document.getElementById('addCmte').value='';
+    document.getElementById('addCopiloto').value='';
+    document.getElementById('addRota').value='';
+    document.getElementById('addObs').value='';
+    openModal('modalAddVoo');
+  });
+
+  document.getElementById('btnConfirmarAddVoo').addEventListener('click', async function(){
+    const cmte = document.getElementById('addCmte').value.trim();
+    const cop  = document.getElementById('addCopiloto').value.trim();
+    const trip = cop ? [cmte,cop] : [cmte];
+    const mat  = document.getElementById('addMatricula').value.trim() || '××-××';
+    const rota = document.getElementById('addRota').value.trim().split('/').map(r=>r.trim()).filter(Boolean);
+    try{
+      const r = await fetch('/api/programacao/voo',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          data:dataAtual,
+          aeronave:document.getElementById('addAeronave').value,
+          cliente:document.getElementById('addCliente').value.trim()||'Geral',
+          tipo:document.getElementById('addTipo').value,
+          oma:document.getElementById('addOma').value.trim(),
+          matricula:mat, tripulacao:trip, rota:rota,
+          obs:document.getElementById('addObs').value.trim(),
+        })
+      });
+      const j = await r.json();
+      if(j.success){ closeModal('modalAddVoo'); showToast('Voo adicionado','success'); carregarDia(); }
+      else showToast('Erro ao adicionar','error');
+    } catch(e){ showToast('Erro de conexão','error') }
+  });
+
+  document.getElementById('btnImportar').addEventListener('click', ()=>{
+    document.getElementById('importData').value = dataAtual;
+    document.getElementById('importTexto').value = '';
+    document.getElementById('importStep1').style.display = '';
+    document.getElementById('importStep2').style.display = 'none';
+    openModal('modalImportar');
+  });
+
+  document.getElementById('btnParseTexto').addEventListener('click', async function(){
+    const texto = document.getElementById('importTexto').value.trim();
+    const data  = document.getElementById('importData').value;
+    if(!texto){ showToast('Cole o texto primeiro','error'); return; }
+    this.textContent = '⏳ Interpretando...';
+    this.disabled = true;
+    try{
+      const r = await fetch('/api/programacao/importar',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({texto, data})
+      });
+      const j = await r.json();
+      this.textContent = '🔍 Interpretar';
+      this.disabled = false;
+      if(!j.success){ showToast(j.erro||'Erro','error'); return; }
+      parsedPreview = j.preview;
+      renderPreview(j.preview);
+      document.getElementById('importStep1').style.display = 'none';
+      document.getElementById('importStep2').style.display = '';
+    } catch(e){
+      this.textContent = '🔍 Interpretar';
+      this.disabled = false;
+      showToast('Erro de conexão','error');
+    }
+  });
+
+  function renderPreview(p){
+    const box = document.getElementById('importPreview');
+    let html = '';
+    let totalVoos = 0;
+
+    Object.entries(p.aeronaves||{}).forEach(([ac, clientes])=>{
+      html += `<div class="preview-section"><h4>✈ ${ac}</h4>`;
+      Object.entries(clientes).forEach(([cliente, voos])=>{
+        html += `<div style="color:var(--sub);font-size:10px;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">▸ ${cliente}</div>`;
+        voos.forEach(v=>{
+          totalVoos++;
+          const trip = (v.tripulacao||[]).join(' / ') || 'A definir';
+          const rota = (v.rota||[]).join(' › ') || '—';
+          html += `<div class="preview-voo">
+            <strong>${v.tipo}${v.oma?' #'+v.oma:''}</strong> · <span style="color:var(--gold)">${v.matricula||'××-××'}</span> · ${trip}<br>
+            <span style="color:var(--sub);font-size:11px">${rota}</span>
+            ${v.obs?`<br><span style="color:#7A9EC0;font-size:11px">${v.obs}</span>`:''}
+          </div>`;
+        });
+      });
+      html += '</div>';
+    });
+
+    if(!totalVoos){
+      html += '<div style="color:var(--sub);text-align:center;padding:12px">Nenhum voo reconhecido. Verifique o texto.</div>';
+    }
+
+    ['stand_by','stand_by_voare','folga_regular','coordenacao'].forEach(k=>{
+      const arr = p[k]||[];
+      if(arr.length){
+        const labels={'stand_by':'Stand By','stand_by_voare':'Stand By Voare','folga_regular':'Folga Regular','coordenacao':'Coordenação'};
+        html += `<div class="preview-section"><h4>${labels[k]}</h4>
+          <div style="display:flex;flex-wrap:wrap;gap:5px">${arr.map(n=>`<span style="background:rgba(255,255,255,.06);padding:2px 8px;border-radius:12px;font-size:11px">${n}</span>`).join('')}</div>
+        </div>`;
+      }
+    });
+
+    if((p.erros||[]).length){
+      html += `<div class="preview-erros"><h4>⚠ Linhas não reconhecidas (${p.erros.length})</h4>
+        ${p.erros.map(e=>`<div>${e}</div>`).join('')}</div>`;
+    }
+
+    html = `<div style="color:var(--sub);font-size:11px;margin-bottom:10px">
+      <strong style="color:#fff">${totalVoos} voos</strong> interpretados para <strong style="color:var(--gold)">${fmt(p.data)}</strong>
+    </div>` + html;
+
+    box.innerHTML = html;
+  }
+
+  document.getElementById('btnVoltarImport').addEventListener('click', ()=>{
+    document.getElementById('importStep1').style.display = '';
+    document.getElementById('importStep2').style.display = 'none';
+  });
+
+  document.getElementById('btnConfirmarImport').addEventListener('click', async function(){
+    if(!parsedPreview){ showToast('Sem dados para salvar','error'); return; }
+    this.textContent = '⏳ Salvando...';
+    this.disabled = true;
+    try{
+      const r = await fetch('/api/programacao/salvar',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(parsedPreview)
+      });
+      const j = await r.json();
+      this.textContent = '✓ Salvar Programação';
+      this.disabled = false;
+      if(j.success){
+        closeModal('modalImportar');
+        showToast(`✅ ${j.total} voos salvos`,'success');
+        setData(parsedPreview.data);
+      } else {
+        showToast(j.erro||'Erro ao salvar','error');
+      }
+    } catch(e){
+      this.textContent = '✓ Salvar Programação';
+      this.disabled = false;
+      showToast('Erro de conexão','error');
+    }
+  });
+
+  document.getElementById('btnClonar').addEventListener('click', async function(){
+    const ontem = addDias(dataAtual,-1);
+    if(!confirm(`Clonar a programação de ${fmt(ontem)} para ${fmt(dataAtual)}?\n\nOs OMA serão removidos (mudam todo dia).`)) return;
+    try{
+      const r = await fetch('/api/programacao/clonar',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({data_origem:ontem, data_destino:dataAtual})
+      });
+      const j = await r.json();
+      if(j.success){ showToast(`✅ ${j.clonados} voos clonados`,'success'); carregarDia(); }
+      else showToast(j.erro||'Erro ao clonar','error');
+    } catch(e){ showToast('Erro de conexão','error') }
+  });
+
+  document.getElementById('btnApagarDia').addEventListener('click', async function(){
+    if(!confirm(`Apagar toda a programação de ${fmt(dataAtual)}?\n\nEssa ação não pode ser desfeita.`)) return;
+    try{
+      const r = await fetch(`/api/programacao/${dataAtual}`,{method:'DELETE'});
+      const j = await r.json();
+      if(j.success){ showToast('Programação apagada','success'); carregarDia(); }
+      else showToast('Erro ao apagar','error');
+    } catch(e){ showToast('Erro de conexão','error') }
+  });
+
+  document.getElementById('dateDisplay').textContent = fmt(dataAtual);
+  document.title = `Prog. ${dataAtual.split('-').reverse().join('/')}`;
+  carregarDia();
+
+})();
+</script>
+</body>
+</html>
