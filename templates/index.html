@@ -12,7 +12,6 @@
     <meta name="apple-mobile-web-app-title" content="Planilha Horas">
     <link rel="apple-touch-icon" href="/icon-192.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -219,12 +218,13 @@
         .progress-bar-wrap {
             background: #e0cfa8;
             border-radius: 10px;
-            height: 12px;
+            height: 14px;
             width: 100%;
             overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
         }
         .barra-fill {
-            background: #e67e22;
+            background: linear-gradient(to right, #e67e22, #f39c12);
             height: 100%;
             border-radius: 10px;
             width: 0%;
@@ -249,14 +249,6 @@
             pointer-events: none; white-space: nowrap;
         }
         .toast.show { opacity: 1; }
-        /* Gráfico dentro do modal */
-        .grafico-container {
-            background: #fcf7e8;
-            border-radius: 20px;
-            padding: 12px;
-            margin: 10px 0;
-            box-shadow: inset 0 0 0 1px #d9c894;
-        }
     </style>
 </head>
 <body>
@@ -388,7 +380,7 @@ let isEditing = false;
 let diaEditandoIndex = null;
 let diaReferencia = null;
 let password = "";
-let chartInstance = null;
+let longPressTimer = null;
 
 function diasNoMes(mes) {
     const m = mes.toLowerCase();
@@ -529,7 +521,6 @@ function ativarEdicaoDia(diaIndex) {
         const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
         if (inp) {
             if (status === "SO") {
-                // Limpa o campo e deixa editável
                 inp.disabled = false;
                 inp.value = "";
                 inp.placeholder = "0,0";
@@ -573,33 +564,25 @@ function limparDestaqueColuna() {
 function habilitarEdicaoStatus(inp, row, diaIndex) {
     const nome = getNomeFromRow(row);
     const statusAtual = ESCALA_MENSAL[nome]?.[diaIndex] || "";
-    // Só permite editar se for um status bloqueado (FR, FS, FE, DM, etc.)
     if (!statusAtual || statusAtual === "SO") {
         showToast("⚠️ Apenas células com status (FR, FS, etc.) podem ser editadas.");
         return;
     }
-    // Habilita edição
     inp.disabled = false;
     inp.classList.add('editando-longpress');
     inp.focus();
     inp.select();
-    // Salvar ao pressionar Enter
     inp.onkeydown = async function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
             const novoValor = this.value.trim().toUpperCase();
             if (novoValor && (getStatusFromValue(novoValor) || novoValor === "SO")) {
-                // Atualiza a escala local
                 ESCALA_MENSAL[nome][diaIndex] = novoValor;
-                // Remove destaque e bloqueia novamente
                 this.classList.remove('editando-longpress');
                 this.disabled = true;
-                // Atualiza cor
                 atualizarCorInput(this);
-                // Salva no backend (envia a alteração do status - vamos enviar um log especial)
                 await salvarStatusNoBackend(nome, diaIndex, novoValor);
                 showToast(`✅ Status alterado para ${novoValor}`);
-                // Recalcula a interface
                 recalcularTudo();
             } else {
                 showToast('❌ Status inválido. Use SO, FR, FS, FE, DM, etc.');
@@ -607,7 +590,6 @@ function habilitarEdicaoStatus(inp, row, diaIndex) {
             this.onkeydown = null;
         }
     };
-    // Se perder o foco sem salvar, cancela
     inp.onblur = function() {
         this.classList.remove('editando-longpress');
         this.disabled = true;
@@ -619,13 +601,6 @@ function habilitarEdicaoStatus(inp, row, diaIndex) {
 }
 
 async function salvarStatusNoBackend(nome, dia, novoStatus) {
-    // Envia uma requisição para atualizar a escala (precisa de uma nova rota no backend)
-    // Vamos usar a mesma rota /api/data para salvar um log especial? Ou criar uma nova.
-    // Para simplificar, vamos enviar um valor negativo de horas para indicar status?
-    // Melhor: criar uma rota específica no backend.
-    // Como estamos apenas no front-end, vou simular o salvamento e mostrar toast.
-    // Na prática, você precisaria criar uma rota /api/update_status no app.py
-    // Vou fazer o front-end enviar uma requisição para /api/update_status com {pilot, day, status}
     try {
         const res = await fetch('/api/update_status', {
             method: 'POST',
@@ -639,47 +614,42 @@ async function salvarStatusNoBackend(nome, dia, novoStatus) {
     }
 }
 
-// ===== NOVA FUNÇÃO: MODAL COMPARATIVO COM GRÁFICO =====
+// ===== NOVA FUNÇÃO: MODAL COMPARATIVO (apenas tabela com barra) =====
 function mostrarComparativoDia(diaIndex) {
     const diaNumero = diaIndex + 1;
     const dadosDia = {};
-    const horasPorDia = new Array(DIAS).fill(0);
+    let maxHoras = 0;
     
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const nome = getNomeFromRow(row);
         const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
         let horas = 0;
-        if (inp && !inp.disabled) {
+        if (inp) {
             horas = parseHora(inp.value);
         }
         dadosDia[nome] = horas;
-        // Acumula horas por dia (para o gráfico)
-        row.querySelectorAll('.input-hora').forEach((inp, i) => {
-            if (!inp.disabled) {
-                horasPorDia[i] += parseHora(inp.value);
-            }
-        });
+        if (horas > maxHoras) maxHoras = horas;
     });
     
     // Ordena pilotos por horas decrescentes
     const pilotosOrdenados = Object.keys(dadosDia).sort((a,b) => dadosDia[b] - dadosDia[a]);
     
     let html = `<div class="card-detalhe"><h2 style="text-align:center; margin-bottom:20px;">📅 Dia ${String(diaNumero).padStart(2, '0')}</h2>`;
-    
-    // Gráfico de barras da evolução mensal
-    html += `<div class="grafico-container"><canvas id="graficoEvolucao" width="600" height="200" style="width:100%; height:auto;"></canvas></div>`;
-    
-    // Tabela simples: Piloto | Horas
-    html += `<div style="margin-top: 20px;"><h3 style="color: #7a4a1e;">📊 Horas do dia</h3>`;
     html += `<div style="overflow-x: auto;"><table class="tabela-detalhe" style="width: 100%;">`;
-    html += `<thead><tr><th style="text-align: left;">Piloto</th><th style="text-align: center;">Horas</th></thead><tbody>`;
+    html += `<thead><tr><th style="text-align: left;">Piloto</th><th style="text-align: center; width: 80px;">Horas</th><th style="text-align: center;">Progresso</th></thead><tbody>`;
+    
     pilotosOrdenados.forEach(nome => {
         const horas = dadosDia[nome] || 0;
-        html += `<tr><td style="text-align: left; font-weight: 500;">${nome}</td>
-                 <td style="text-align: center; font-weight: bold;">${horas === 0 ? '—' : formatarHora(horas)}</td></tr>`;
+        const perc = maxHoras > 0 ? (horas / maxHoras) * 100 : 0;
+        const horasDisplay = horas === 0 ? '—' : formatarHora(horas);
+        html += `<tr>
+            <td style="text-align: left; font-weight: 500;">${nome}</td>
+            <td style="text-align: center; font-weight: bold;">${horasDisplay}</td>
+            <td style="min-width: 120px;"><div class="progress-bar-wrap"><div class="barra-fill" style="width: ${perc}%;"></div></div></td>
+        </tr>`;
     });
-    html += `</tbody></table></div>`;
     
+    html += `</tbody></table></div>`;
     html += `<button class="btn-fechar" id="fecharDetalhe">Fechar</button></div>`;
     
     const modal = document.createElement('div');
@@ -687,48 +657,8 @@ function mostrarComparativoDia(diaIndex) {
     modal.innerHTML = html;
     document.body.appendChild(modal);
     
-    // Renderizar gráfico após o modal ser exibido
-    setTimeout(() => {
-        const canvas = document.getElementById('graficoEvolucao');
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            if (chartInstance) chartInstance.destroy();
-            const labels = Array.from({length: DIAS}, (_, i) => i+1);
-            const data = horasPorDia;
-            chartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Total de horas',
-                        data: data,
-                        backgroundColor: 'rgba(230, 168, 0, 0.6)',
-                        borderColor: 'rgba(230, 168, 0, 1)',
-                        borderWidth: 1,
-                        borderRadius: 4,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(1)}h` } }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, title: { display: true, text: 'Horas' } },
-                        x: { title: { display: true, text: 'Dia' } }
-                    }
-                }
-            });
-        }
-    }, 100);
-    
-    modal.querySelector('#fecharDetalhe').onclick = () => {
-        if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
-        modal.remove();
-    };
-    modal.onclick = e => { if (e.target === modal) { if (chartInstance) { chartInstance.destroy(); chartInstance = null; } modal.remove(); } };
+    modal.querySelector('#fecharDetalhe').onclick = () => modal.remove();
+    modal.onclick = e => { if (e.target === modal) modal.remove(); };
 }
 
 // ===== OUTRAS FUNÇÕES EXISTENTES =====
@@ -826,7 +756,6 @@ async function carregarDoBackend() {
                     let longPressTimer = null;
                     inp.addEventListener('touchstart', (e) => {
                         longPressTimer = setTimeout(() => {
-                            // Se estiver desbloqueado, permite editar status
                             if (isEditing) {
                                 habilitarEdicaoStatus(inp, row, i);
                             }
