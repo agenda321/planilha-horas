@@ -90,10 +90,21 @@ def obtener_escala_dinamica(pilot_obj, month, year):
                 sub_idx += 1
     return escala
 
-@app.route("/")
-def index():
-    return render_template("index.html")
+# ============================
+# ROTAS
+# ============================
 
+# Landing page (estática)
+@app.route("/")
+def landing():
+    return app.send_static_file('index.html')
+
+# Planilha
+@app.route("/planilha")
+def planilha():
+    return render_template("planilha.html")
+
+# API de login
 @app.route("/api/login", methods=["POST"])
 def login():
     data = request.get_json()
@@ -101,6 +112,7 @@ def login():
         return jsonify({"success": True})
     return jsonify({"success": False}), 401
 
+# API de dados
 @app.route("/api/data", methods=["GET"])
 def get_data():
     month, year = datetime.now().month, datetime.now().year
@@ -143,6 +155,7 @@ def save_data():
     db.session.commit()
     return jsonify({"success": True})
 
+# API de disponíveis
 @app.route("/api/available_commanders/<int:day_index>", methods=["GET"])
 def get_available_commanders(day_index):
     pilotos_com_horas = {"CESSNA 206/210": [], "CARAVAN": [], "COPILOTO": []}
@@ -174,6 +187,7 @@ def get_available_commanders(day_index):
         available[grupo] = sorted(lista_pilotos, key=lambda x: x["horas_totais"], reverse=True)
     return jsonify(available)
 
+# API de atualização de status (toque longo)
 @app.route("/api/update_status", methods=["POST"])
 def update_status():
     data = request.get_json()
@@ -195,6 +209,7 @@ def update_status():
     db.session.commit()
     return jsonify({"success": True})
 
+# Debug: reset banco
 @app.route("/api/debug/reset-banco")
 def reset_banco():
     db.drop_all()
@@ -299,9 +314,11 @@ def povoar_dados_iniciais():
                 db.session.add(FlightLog(pilot_id=p_obj.id, day=d_num, month=m_atual, year=y_atual, hours=float(h_val)))
     db.session.commit()
 
+# Integração com módulo de programação
 from programacao import register_routes
 register_routes(app, db)
 
+# Inicialização do banco
 with app.app_context():
     db.create_all()
     if Pilot.query.count() == 0:
