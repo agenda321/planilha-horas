@@ -1,1026 +1,311 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Planilha de Voo | Registro de Horas</title>
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#1a237e">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Planilha Horas">
-    <link rel="apple-touch-icon" href="/icon-192.png">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            margin: 0; min-height: 100vh;
-            background: radial-gradient(circle at 20% 30%, #b87c4f, #6e4a2e);
-            font-family: 'Segoe UI', 'Georgia', serif;
-            padding: 24px 16px;
-            display: flex; justify-content: center; align-items: center;
-        }
-        .skeuo-container {
-            max-width: 1400px; width: 100%;
-            background: #e2d6c0;
-            background-image: repeating-linear-gradient(45deg, #dacaa8 0px, #dacaa8 2px, #efe3c9 2px, #efe3c9 8px);
-            border-radius: 48px;
-            box-shadow: 0 25px 45px rgba(0,0,0,0.5), inset 0 1px 4px rgba(255,255,200,0.8);
-            padding: 20px;
-        }
-        .planilha-card {
-            background: #fcf7e8; border-radius: 32px;
-            box-shadow: inset 0 0 0 2px #fff9e8, inset 0 0 0 6px #d9c894, 0 12px 28px rgba(0,0,0,0.4);
-            padding: 8px 0 12px;
-        }
-        .cabecalho-skeuo {
-            padding: 12px 30px; border-bottom: 3px solid #b28b5e;
-            display: flex; justify-content: space-between; align-items: center;
-            flex-wrap: wrap;
-            background: linear-gradient(to bottom, #fdf5e0, #f4e5ca);
-            border-radius: 28px 28px 18px 18px;
-            margin-bottom: 16px; gap: 15px;
-        }
-        .title-area { display: flex; align-items: baseline; gap: 15px; flex-wrap: wrap; }
-        h1 { font-family: Georgia; font-size: 1.8rem; margin: 0; color: #3b2a1f; text-shadow: 3px 3px 0 #cdb086; }
-        .mes-editavel {
-            background: #f9f2e0; border: 2px solid #c9aa77; border-radius: 60px;
-            padding: 6px 16px; font-family: monospace; font-size: 1rem; font-weight: bold;
-            width: 150px; text-align: center;
-        }
-        .mes-editavel:disabled { background: #e9e0cf; opacity: 0.8; }
-        .badge-senha {
-            background: #b97f4b; border-radius: 60px; padding: 6px 16px;
-            font-size: 0.75rem; font-weight: bold; color: #fff1cf;
-            box-shadow: inset 0 1px 2px #ffdd99, 0 3px 6px rgba(0,0,0,0.2);
-        }
-        .btn-skeuo {
-            background: radial-gradient(circle at 30% 20%, #f3de9f, #cb9e6b);
-            border: none; font-size: 0.85rem; font-weight: bold; padding: 8px 18px;
-            border-radius: 60px; box-shadow: 0 5px 0 #7a4f2c; cursor: pointer; transition: 0.05s linear;
-        }
-        .btn-skeuo:active { transform: translateY(3px); box-shadow: 0 2px 0 #7a4f2c; }
-        .btn-skeuo:disabled { opacity: 0.55; cursor: default; transform: none; }
-        .button-group { display: flex; gap: 12px; flex-wrap: wrap; }
-        .top-actions {
-            padding: 0 20px; display: flex; justify-content: space-between;
-            flex-wrap: wrap; gap: 15px; margin-bottom: 20px;
-        }
-        .dias-botoes {
-            display: grid; grid-template-columns: repeat(7, 1fr);
-            gap: 6px; margin: 16px 12px; padding: 10px;
-            background: #ddcdac; border-radius: 40px;
-            box-shadow: inset 0 0 0 2px #fef1cf, inset 0 0 0 4px #c2a570;
-            width: calc(100% - 24px);
-        }
-        .btn-dia {
-            background: radial-gradient(circle at 30% 20%, #f0dc9f, #c29a5e);
-            border: none; font-size: 0.8rem; font-weight: bold; padding: 8px 0;
-            border-radius: 60px; box-shadow: 0 3px 0 #6b4828; cursor: pointer;
-            transition: 0.05s linear; text-align: center;
-            display: flex; flex-direction: column; align-items: center;
-            justify-content: center; gap: 2px; line-height: 1.2;
-            width: 100%; min-width: 0;
-            touch-action: manipulation;
-        }
-        .btn-dia .dia-num { font-size: 0.8rem; font-weight: bold; }
-        .btn-dia .dia-total { font-size: 0.55rem; color: #5a3a10; white-space: nowrap; }
-        .btn-dia.tem-dados .dia-total { color: #a05000; font-weight: bold; }
-        .btn-dia.dia-selecionado {
-            background: radial-gradient(circle at 30% 20%, #ffe066, #e6a800);
-            box-shadow: 0 3px 0 #7a5200, 0 0 10px 3px rgba(230,167,0,0.5);
-            color: #3b2a00;
-        }
-        .btn-dia.dia-editando {
-            background: radial-gradient(circle at 30% 20%, #a5d6a5, #6f9e6f);
-            box-shadow: 0 3px 0 #3e6b3e;
-        }
-        @media (max-width: 480px) {
-            .dias-botoes { gap: 4px; padding: 8px; margin: 12px 8px; width: calc(100% - 16px); }
-            .btn-dia { font-size: 0.65rem; padding: 6px 0; }
-            .btn-dia .dia-num { font-size: 0.65rem; }
-            .btn-dia .dia-total { font-size: 0.55rem; }
-        }
-        .table-wrapper {
-            overflow-x: auto; margin: 20px 12px;
-            background: #ddcdac; padding: 8px; border-radius: 24px;
-            max-height: 60vh; -webkit-overflow-scrolling: touch;
-        }
-        .planilha { width: 100%; border-collapse: collapse; background: #fff6e8; min-width: 1000px; }
-        .planilha th, .planilha td { border: 1px solid #ebddbb; padding: 8px 4px; text-align: center; }
-        .planilha th {
-            background: linear-gradient(to bottom, #b88954, #7e5937);
-            color: #fff4e0; position: sticky; top: 0; z-index: 10;
-        }
-        .planilha td:first-child {
-            background: #f7efdc; font-weight: bold; text-align: left;
-            position: sticky; left: 0; z-index: 5; border-right: 2px solid #dbb87a;
-        }
-        .planilha th:first-child { position: sticky; left: 0; z-index: 15; background: #9c7a50; }
-        .planilha th.col-ativa { background: linear-gradient(to bottom, #e6a800, #a07000) !important; }
-        .planilha td.col-ativa { background: #fffacc !important; }
-        
-        .input-hora {
-            width: 70px;
-            padding: 6px;
-            text-align: center;
-            font-family: monospace;
-            background: #f9f2e0;
-            border: 2px solid #c9aa77;
-            border-radius: 16px;
-            transition: all 0.2s;
-            touch-action: manipulation;
-        }
-        .input-hora::placeholder { color: #aaa; font-style: italic; font-size: 0.7rem; }
-        .input-hora.has-value { background: #fff1b5; border-color: #e4b149; box-shadow: 0 0 6px gold; }
-        .input-hora.streak-day { background: #ffcc99; border-color: #e67300; }
+import os
+from flask import Flask, request, jsonify, render_template
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
+from escala import ESCALA_MENSAL
+from flask_cors import CORS
 
-        .input-hora[data-status="DM"], .input-hora[data-status="CM"] { background: #ffb366; border-color: #cc5200; color: #662200; font-weight: bold; }
-        .input-hora[data-status="VO"], .input-hora[data-status="CQ"], .input-hora[data-status="TN"] { background: #99ccff; border-color: #0066cc; color: #003366; font-weight: bold; }
-        .input-hora[data-status="EA"], .input-hora[data-status="TR"] { background: #ffff99; border-color: #cccc00; color: #666600; font-weight: bold; }
-        .input-hora[data-status="FR"] { background: #90ee90; border-color: #008000; color: #004d00; font-weight: bold; }
-        .input-hora[data-status="FS"] { background: #ff9999; border-color: #cc0000; color: #660000; font-weight: bold; }
-        .input-hora[data-status="FE"] { background: #ccffcc; border-color: #00cc00; color: #006600; font-weight: bold; }
-        .input-hora[data-status="RE"] { background: #ffccff; border-color: #cc66cc; color: #660066; font-weight: bold; }
-        .input-hora[data-status="SO"] { background: #ffffff; border-color: #999999; color: #333333; font-weight: bold; }
-        .input-hora[data-status="default"] { background: #f9f2e0; border-color: #c9aa77; }
+app = Flask(__name__)
 
-        /* Destaque para célula em edição por toque longo */
-        .input-hora.editando-longpress {
-            outline: 3px solid #ffaa00;
-            box-shadow: 0 0 0 4px rgba(255,170,0,0.3);
-            background: #fff8e0;
-        }
+# Configuração do banco de dados
+database_url = os.environ.get("DATABASE_URL", "postgresql://user:password@localhost/mydatabase")
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
 
-        .total-cell { background: #e7dbbc; font-weight: bold; }
-        .group-title-row td {
-            background: linear-gradient(135deg, #ccaa7a, #b1834d);
-            font-weight: bold; font-size: 1.2rem; text-align: center;
-        }
-        .info-footer {
-            display: flex; justify-content: space-between; align-items: center;
-            flex-wrap: wrap; margin: 16px 24px; gap: 12px;
-        }
-        .legenda {
-            background: #eedbba; border-radius: 36px; padding: 10px 18px;
-            font-size: 11px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
-        }
-        .legenda-item {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 2px 10px; border-radius: 20px;
-        }
-        .status-chip {
-            background: #4c351e; border-radius: 60px; padding: 5px 15px;
-            font-size: 0.7rem; font-weight: bold; color: #ffe1a0;
-            box-shadow: inset 0 1px 3px #ffdf9a, 0 2px 4px black;
-        }
-        .sync-bar { display: flex; justify-content: flex-end; padding: 0 20px 8px; }
-        .sync-status {
-            font-size: 0.7rem; background: #4c351e;
-            padding: 4px 12px; border-radius: 60px; color: #ffe1a0;
-        }
-        .modal-senha, .modal-detalhe {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); backdrop-filter: blur(6px);
-            display: flex; align-items: center; justify-content: center; z-index: 2000;
-        }
-        .card-senha, .card-detalhe {
-            background: #fdf5e6; border-radius: 48px; width: 90%; max-width: 700px;
-            padding: 24px; box-shadow: 0 20px 35px black; max-height: 85vh; overflow-y: auto;
-        }
-        .card-senha { text-align: center; max-width: 350px; }
-        .card-senha input {
-            width: 100%; padding: 12px; margin: 20px 0; border-radius: 60px;
-            border: 2px solid #b67e45; background: #fff2e0;
-            font-size: 1rem; text-align: center;
-        }
-        .botoes-senha { display: flex; gap: 15px; justify-content: center; }
-        .btn-modal {
-            background: #a07143; color: white; border: none;
-            padding: 8px 22px; border-radius: 60px; cursor: pointer;
-        }
-        .tabela-detalhe {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        .tabela-detalhe th, .tabela-detalhe td {
-            border: 1px solid #ccb28b;
-            padding: 10px 8px;
-            text-align: left;
-        }
-        .tabela-detalhe th {
-            background: #e8d5b0;
-            font-weight: bold;
-            text-align: center;
-        }
-        .progress-bar-wrap {
-            background: #e0cfa8;
-            border-radius: 10px;
-            height: 12px;
-            width: 100%;
-            overflow: hidden;
-        }
-        .barra-fill {
-            background: #e67e22;
-            height: 100%;
-            border-radius: 10px;
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-        .btn-fechar {
-            background: #b07842; border: none; padding: 10px 28px;
-            border-radius: 60px; color: white; margin-top: 20px; cursor: pointer;
-            display: block; margin-left: auto; margin-right: auto;
-        }
-        .badge-dia-edicao {
-            background: #e6a800; border-radius: 60px; padding: 5px 14px;
-            font-size: 0.75rem; font-weight: bold; color: #3b2a00; display: none;
-        }
-        .badge-dia-edicao.visivel { display: inline-block; }
-        .toast {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            background: #3b2a1f; color: #ffe1a0; padding: 10px 24px;
-            border-radius: 60px; font-size: 0.85rem; font-weight: bold;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4); z-index: 9999;
-            opacity: 0; transition: opacity 0.3s ease;
-            pointer-events: none; white-space: nowrap;
-        }
-        .toast.show { opacity: 1; }
-        /* Gráfico dentro do modal */
-        .grafico-container {
-            background: #fcf7e8;
-            border-radius: 20px;
-            padding: 12px;
-            margin: 10px 0;
-            box-shadow: inset 0 0 0 1px #d9c894;
-        }
-    </style>
-</head>
-<body>
-<div class="skeuo-container">
-    <div class="planilha-card">
-        <div class="cabecalho-skeuo">
-            <div class="title-area">
-                <h1>✈️ REGISTRO DE HORAS</h1>
-                <input type="text" id="campoMes" class="mes-editavel" value="Junho" disabled>
-            </div>
-            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-                <span class="badge-dia-edicao" id="badgeDiaEdicao">✏️ EDITANDO DIA --</span>
-                <div class="badge-senha" id="statusBadge">🔒 SOMENTE LEITURA</div>
-            </div>
-        </div>
-        <div class="top-actions">
-            <div class="button-group">
-                <button class="btn-skeuo" id="btnDesbloquear">🔐 DESBLOQUEAR</button>
-                <button class="btn-skeuo" id="btnLimpar" disabled>🧹 LIMPAR</button>
-                <button class="btn-skeuo" id="btnBloquear" disabled>🔒 BLOQUEAR</button>
-                <button class="btn-skeuo" id="btnSairDia" style="display:none">✖ SAIR DO DIA</button>
-            </div>
-        </div>
-        <div class="sync-bar">
-            <span class="sync-status" id="syncStatus">💾 Sincronizado</span>
-        </div>
-        <div class="dias-botoes" id="botoesDias"></div>
-        <div class="table-wrapper">
-            <table class="planilha" id="tabelaHoras">
-                <thead id="tableHeader"></thead>
-                <tbody id="planilhaBody"></tbody>
-                <tfoot id="tfootTotal"></tfoot>
-            </table>
-        </div>
-        <div class="info-footer">
-            <div class="legenda">
-                <span class="legenda-item" style="background:#ffb366;">DM/CM = Laranja</span>
-                <span class="legenda-item" style="background:#99ccff;">VO/CQ/TN = Azul</span>
-                <span class="legenda-item" style="background:#ffff99;">EA/TR = Amarelo</span>
-                <span class="legenda-item" style="background:#90ee90;">FR = Verde</span>
-                <span class="legenda-item" style="background:#ff9999;">FS = Vermelho</span>
-                <span class="legenda-item" style="background:#ccffcc;">FE = Verde Claro</span>
-                <span class="legenda-item" style="background:#ffccff;">RE = Rosa</span>
-                <span class="legenda-item" style="background:#ffffff;">SO = Branco</span>
-                <span><i class="fas fa-edit"></i> Toque no dia → editar coluna | Toque longo → disponíveis</span>
-            </div>
-            <div class="status-chip" id="editModeChip">📖 MODO VISUALIZAÇÃO</div>
-        </div>
-    </div>
-</div>
+CORS(app)
 
-<script>
-function showToast(msg, duracao = 2500) {
-    let toast = document.getElementById('toast');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'toast';
-        toast.className = 'toast';
-        document.body.appendChild(toast);
+EDIT_PASSWORD = os.environ.get("EDIT_PASSWORD", "Emerson")
+EDIT_PASSWORD_2 = os.environ.get("EDIT_PASSWORD_2", "Bispo")
+
+CODIGOS_DISPONIVEIS = ["VO", "CQ", "RE", "SO", "EA", "TR", "TN"]
+
+CORES = {
+    "DM": "laranja",
+    "CM": "laranja_claro",
+    "VO": "azul",
+    "EA": "amarelo",
+    "FR": "verde",
+    "FS": "vermelho",
+    "FE": "verde_claro",
+    "RE": "rosa",
+    "SO": "branco",
+    "TR": "amarelo_escuro",
+    "TN": "azul_claro",
+    "CQ": "azul_medio"
+}
+
+class Pilot(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True, nullable=False)
+    full_name = db.Column(db.String(120), nullable=True)
+    group = db.Column(db.String(50), nullable=False)
+
+class FlightLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    pilot_id = db.Column(db.Integer, db.ForeignKey("pilot.id"), nullable=False)
+    day = db.Column(db.Integer, nullable=False)
+    month = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    hours = db.Column(db.Float, nullable=False, default=0.0)
+    pilot = db.relationship("Pilot", backref=db.backref("flight_logs", lazy=True))
+
+class StatusOverride(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    pilot_id = db.Column(db.Integer, db.ForeignKey("pilot.id"), nullable=False)
+    day = db.Column(db.Integer, nullable=False)
+    month = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(10), nullable=False)
+    pilot = db.relationship("Pilot", backref=db.backref("status_overrides", lazy=True))
+
+def normalizar_status(status):
+    if status is None or status == "" or status == " ":
+        return "VO"
+    return status
+
+def obtener_escala_dinamica(pilot_obj, month, year):
+    escala = list(ESCALA_MENSAL.get(pilot_obj.name, []))
+    if not escala:
+        return escala
+    overrides = StatusOverride.query.filter_by(pilot_id=pilot_obj.id, month=month, year=year).all()
+    for ov in overrides:
+        if ov.day < len(escala):
+            escala[ov.day] = ov.status
+    logs = FlightLog.query.filter_by(pilot_id=pilot_obj.id, month=month, year=year).all()
+    dias_com_horas = {log.day for log in logs if log.hours > 0}
+    limite = min(10, len(escala))
+    for i in range(limite):
+        dia_num = i + 1
+        if dia_num in dias_com_horas and escala[i] == "FR":
+            sub_idx = i + 1
+            while sub_idx < len(escala):
+                sub_dia_num = sub_idx + 1
+                if escala[sub_idx] == "SO" and sub_dia_num not in dias_com_horas:
+                    escala[i] = "SO"
+                    escala[sub_idx] = "FR"
+                    break
+                sub_idx += 1
+    return escala
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/api/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    if data.get("password") in [EDIT_PASSWORD, EDIT_PASSWORD_2]:
+        return jsonify({"success": True})
+    return jsonify({"success": False}), 401
+
+@app.route("/api/data", methods=["GET"])
+def get_data():
+    month, year = datetime.now().month, datetime.now().year
+    pilots = Pilot.query.all()
+    logs = FlightLog.query.filter_by(month=month, year=year).all()
+    result = {
+        "pilots": [{"name": p.name, "group": p.group, "full_name": p.full_name or p.name} for p in pilots],
+        "logs": {}
     }
-    toast.textContent = msg;
-    toast.classList.add('show');
-    clearTimeout(toast._timer);
-    toast._timer = setTimeout(() => toast.classList.remove('show'), duracao);
-}
+    for log in logs:
+        if log.pilot.name not in result["logs"]:
+            result["logs"][log.pilot.name] = {}
+        result["logs"][log.pilot.name][log.day] = log.hours
+    return jsonify(result)
 
-// ======================== ESCALA MENSAL ========================
-const ESCALA_MENSAL = {
-    "Adelio": ["FE","FE","FE","FE","FE","FE","FE","FE","SO","SO","SO","FS","FS","FS","RE","SO","FR","SO","SO","FR","SO","SO","FR","SO","SO","FR","SO","SO","SO","FR"],
-    "Otto": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO"],
-    "Andre": ["DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM","DM"],
-    "Cleiton": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR"],
-    "Cleverson": ["SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
-    "Edson": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","FR","SO"],
-    "Frank": ["FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO"],
-    "Gabriel": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO"],
-    "Costa": ["SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
-    "Hazafe": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR"],
-    "Amarildo": ["SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
-    "Igorh": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO"],
-    "Joao": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO"],
-    "Dayvid": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR"],
-    "Lindomar": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
-    "Lucas": ["FR","FR","FR","FR","FS","FS","FS","RE","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO","SO"],
-    "Luiz": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO"],
-    "Mathias": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO"],
-    "Milton": ["FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","FE","SO","SO","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
-    "Pascoal": ["SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO"],
-    "Paulo": ["EA","EA","EA","EA","SO","FR","FR","EA","EA","EA","EA","FS","FS","FS","RE","EA","EA","EA","SO","FR","FR","EA","EA","EA","EA","SO","SO","FR","SO","SO"],
-    "Perisson": ["FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FE","FE","FE","FE","FE","FE","FE"],
-    "Renan": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
-    "Roberto": ["SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO"],
-    "Ronie": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR"],
-    "Rui": ["FE","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
-    "Sergio": ["FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO"],
-    "Tarso": ["SO","SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FS","FS","FS","RE","SO"],
-    "Vitor": ["FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
-    "Bento": ["FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
-    "Wellber": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO"],
-    "Andrade": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO"],
-    "Yago": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO"],
-    "Cauê": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO"],
-    "Daniela": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO"],
-    "Ernesto": ["FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO"],
-    "Ruben": ["FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","SO","SO","FR","SO"],
-    "Rodrigo": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","SO"],
-    "Ronaldo": ["SO","FR","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
-    "Thales": ["SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
-    "Serafim": ["SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","SO","FR","SO","SO"],
-    "Tiago": ["FR","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO"],
-    "Leandro": ["SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"],
-    "Dany": ["SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO","SO","SO","SO","FR"],
-    "Felipe": ["SO","SO","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FS","FS","FS","RE","SO"]
-};
+@app.route("/api/data", methods=["POST"])
+def save_data():
+    data = request.get_json()
+    if data.get("password") not in [EDIT_PASSWORD, EDIT_PASSWORD_2]:
+        return jsonify({"success": False}), 401
+    month, year = datetime.now().month, datetime.now().year
+    for pilot_name, days in data.get("logs", {}).items():
+        pilot = Pilot.query.filter_by(name=pilot_name).first()
+        if not pilot:
+            continue
+        for day_str, hours in days.items():
+            day = int(day_str)
+            if hours is None or str(hours).strip() == "":
+                valor_horas = 0.0
+            else:
+                try:
+                    valor_horas = float(hours)
+                except ValueError:
+                    valor_horas = 0.0
+            log = FlightLog.query.filter_by(pilot_id=pilot.id, day=day, month=month, year=year).first()
+            if log:
+                log.hours = valor_horas
+            else:
+                db.session.add(FlightLog(pilot_id=pilot.id, day=day, month=month, year=year, hours=valor_horas))
+    db.session.commit()
+    return jsonify({"success": True})
 
-const GRUPOS_PILOTO = {
-    "CARAVAN": ["Cleiton","Joao","Pascoal","Lindomar","Perisson","Rui","Yago"],
-    "COPILOTO": ["Cauê","Felipe","Ruben","Ernesto","Daniela","Thales","Serafim","Ronaldo","Rodrigo","Tiago"],
-};
+@app.route("/api/available_commanders/<int:day_index>", methods=["GET"])
+def get_available_commanders(day_index):
+    pilotos_com_horas = {"CESSNA 206/210": [], "CARAVAN": [], "COPILOTO": []}
+    pilots = Pilot.query.all()
+    month, year = datetime.now().month, datetime.now().year
+    dia_solicitado = day_index + 1
+    for pilot in pilots:
+        escala = obtener_escala_dinamica(pilot, month, year)
+        if not escala:
+            escala = ESCALA_MENSAL.get(pilot.name, [])
+        if day_index < len(escala):
+            raw_status = escala[day_index]
+            status = normalizar_status(raw_status)
+            cor = CORES.get(status, "cinza")
+        else:
+            status = "VO"
+            cor = "azul"
+        if status in CODIGOS_DISPONIVEIS:
+            logs = FlightLog.query.filter_by(pilot_id=pilot.id, month=month, year=year).all()
+            horas_acumuladas = sum(log.hours for log in logs if log.day <= dia_solicitado)
+            pilotos_com_horas[pilot.group].append({
+                "name": pilot.full_name or pilot.name,
+                "status": status,
+                "color": cor,
+                "horas_totais": horas_acumuladas
+            })
+    available = {}
+    for grupo, lista_pilotos in pilotos_com_horas.items():
+        available[grupo] = sorted(lista_pilotos, key=lambda x: x["horas_totais"], reverse=True)
+    return jsonify(available)
 
-function getGrupo(nome) {
-    if (GRUPOS_PILOTO["CARAVAN"].includes(nome)) return "CARAVAN";
-    if (GRUPOS_PILOTO["COPILOTO"].includes(nome)) return "COPILOTO";
-    return "CESSNA 206/210";
-}
+@app.route("/api/update_status", methods=["POST"])
+def update_status():
+    data = request.get_json()
+    pilot_name = data.get("pilot")
+    day = data.get("day")
+    new_status = data.get("status")
+    month, year = datetime.now().month, datetime.now().year
+    if not pilot_name or day is None or not new_status:
+        return jsonify({"success": False, "erro": "Dados incompletos"}), 400
+    pilot = Pilot.query.filter_by(name=pilot_name).first()
+    if not pilot:
+        return jsonify({"success": False, "erro": "Piloto não encontrado"}), 404
+    override = StatusOverride.query.filter_by(pilot_id=pilot.id, day=day, month=month, year=year).first()
+    if override:
+        override.status = new_status
+    else:
+        override = StatusOverride(pilot_id=pilot.id, day=day, month=month, year=year, status=new_status)
+        db.session.add(override)
+    db.session.commit()
+    return jsonify({"success": True})
 
-let DIAS = 30;
-let isEditing = false;
-let diaEditandoIndex = null;
-let diaReferencia = null;
-let password = "";
-let chartInstance = null;
+@app.route("/api/debug/reset-banco")
+def reset_banco():
+    db.drop_all()
+    db.create_all()
+    povoar_dados_iniciais()
+    return "Banco reiniciado e dados da planilha carregados com sucesso!"
 
-function diasNoMes(mes) {
-    const m = mes.toLowerCase();
-    if (m === "fevereiro") return 28;
-    if (["abril","junho","setembro","novembro"].includes(m)) return 30;
-    return 31;
-}
-
-function atualizarDias() {
-    const mesInput = document.getElementById('campoMes');
-    let mes = mesInput.value.trim();
-    if (!mes) mes = "Junho";
-    DIAS = diasNoMes(mes);
-    return DIAS;
-}
-
-function parseHora(v) {
-    if (!v) return 0;
-    let n = parseFloat(String(v).trim().replace(',','.'));
-    return isNaN(n) ? 0 : n;
-}
-function formatarHora(n) { return n.toFixed(1).replace('.',','); }
-
-function getStatusFromValue(value) {
-    const statusMap = {
-        "DM": "DM", "CM": "CM", "VO": "VO", "CQ": "CQ", "TN": "TN",
-        "EA": "EA", "TR": "TR", "FR": "FR", "FS": "FS", "FE": "FE",
-        "RE": "RE", "SO": "SO"
-    };
-    return statusMap[value] || null;
-}
-
-function getNomeFromRow(row) { return row.cells[0].innerText.trim(); }
-function getColIndex(inp) { return Array.from(inp.parentNode.parentNode.children).indexOf(inp.parentNode) - 1; }
-
-function atualizarCorInput(inp) {
-    const valor = inp.value.trim();
-    const status = getStatusFromValue(valor);
-    if (status) {
-        inp.setAttribute('data-status', status);
-        inp.classList.remove('has-value');
-    } else if (valor !== "" && parseHora(valor) > 0) {
-        inp.setAttribute('data-status', '');
-        inp.classList.add('has-value');
-    } else {
-        inp.setAttribute('data-status', 'default');
-        inp.classList.remove('has-value');
+def povoar_dados_iniciais():
+    grupos = {
+        "Andre": "CESSNA 206/210", "Andrade": "CESSNA 206/210", "Adelio": "CESSNA 206/210",
+        "Amarildo": "CESSNA 206/210", "Cleverson": "CESSNA 206/210", "Hazafe": "CESSNA 206/210",
+        "Dayvid": "CESSNA 206/210", "Edson": "CESSNA 206/210", "Frank": "CESSNA 206/210",
+        "Gabriel": "CESSNA 206/210", "Igorh": "CESSNA 206/210", "Leandro": "CESSNA 206/210",
+        "Luiz": "CESSNA 206/210", "Milton": "CESSNA 206/210", "Paulo": "CESSNA 206/210",
+        "Ronie": "CESSNA 206/210", "Sergio": "CESSNA 206/210", "Tarso": "CESSNA 206/210",
+        "Otto": "CESSNA 206/210", "Dany": "CESSNA 206/210", "Lucas": "CESSNA 206/210",
+        "Roberto": "CESSNA 206/210", "Renan": "CESSNA 206/210", "Wellber": "CESSNA 206/210",
+        "Bento": "CESSNA 206/210", "Costa": "CESSNA 206/210", "Vitor": "CESSNA 206/210",
+        "Mathias": "CESSNA 206/210",
+        "Cleiton": "CARAVAN", "Joao": "CARAVAN", "Pascoal": "CARAVAN",
+        "Lindomar": "CARAVAN", "Perisson": "CARAVAN", "Rui": "CARAVAN", "Yago": "CARAVAN",
+        "Cauê": "COPILOTO", "Felipe": "COPILOTO", "Ruben": "COPILOTO",
+        "Ernesto": "COPILOTO", "Daniela": "COPILOTO", "Thales": "COPILOTO",
+        "Serafim": "COPILOTO", "Ronaldo": "COPILOTO", "Rodrigo": "COPILOTO", "Tiago": "COPILOTO"
     }
-}
-
-function atualizarTotalLinha(row) {
-    let soma = 0;
-    row.querySelectorAll('.input-hora').forEach((inp) => {
-        let val = parseHora(inp.value);
-        if (!isNaN(val) && val > 0) soma += val;
-        atualizarCorInput(inp);
-    });
-    const totalCell = row.querySelector('.total-cell');
-    if (totalCell) totalCell.textContent = formatarHora(soma);
-    return soma;
-}
-
-function validarStreaks() {
-    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const inputs = row.querySelectorAll('.input-hora');
-        const vals = Array.from(inputs).map((inp) => {
-            let val = parseHora(inp.value);
-            return val > 0 ? 1 : 0;
-        });
-        let streak = 0;
-        const seq = new Array(DIAS).fill(false);
-        for (let i = 0; i < DIAS; i++) {
-            if (vals[i]) { streak++; if (streak >= 6) for (let j = i-streak+1; j <= i; j++) seq[j] = true; }
-            else streak = 0;
-        }
-        inputs.forEach((inp, i) => inp.classList.toggle('streak-day', seq[i]));
-        const nomeCell = row.querySelector('td:first-child');
-        const icon = nomeCell.querySelector('.alert-icon');
-        if (seq.some(v => v)) {
-            if (!icon) { const ic = document.createElement('i'); ic.className = 'fas fa-exclamation-triangle alert-icon'; ic.title = '6+ dias consecutivos'; nomeCell.appendChild(ic); }
-        } else if (icon) icon.remove();
-    });
-}
-
-function recalcularTudo() {
-    let somaGeral = 0;
-    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => somaGeral += atualizarTotalLinha(row));
-    const tfoot = document.getElementById('tfootTotal');
-    tfoot.innerHTML = '';
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td style="font-weight:bold">🏁 TOTAL GERAL<\/td>${'<td><\/td>'.repeat(DIAS)}<td class="total-geral">${formatarHora(somaGeral)}<\/td>`;
-    tfoot.appendChild(tr);
-    validarStreaks();
-    atualizarTotaisBotoesDias();
-}
-
-function totalHorasDia(diaIndex) {
-    let soma = 0;
-    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const inp = row.cells[diaIndex+1]?.querySelector('.input-hora');
-        if (inp) {
-            let val = parseHora(inp.value);
-            if (!isNaN(val) && val > 0) soma += val;
-        }
-    });
-    return soma;
-}
-
-function atualizarTotaisBotoesDias() {
-    document.querySelectorAll('.btn-dia').forEach((btn, i) => {
-        const total = totalHorasDia(i);
-        const labelEl = btn.querySelector('.dia-total');
-        if (labelEl) labelEl.textContent = total > 0 ? formatarHora(total)+'h' : '';
-        btn.classList.toggle('tem-dados', total > 0);
-    });
-}
-
-function sairEdicaoDia() {
-    if (diaEditandoIndex !== null) {
-        diaEditandoIndex = null;
-        document.getElementById('badgeDiaEdicao').classList.remove('visivel');
-        document.getElementById('btnSairDia').style.display = 'none';
-        document.querySelectorAll('.btn-dia').forEach(btn => btn.classList.remove('dia-editando'));
-        limparDestaqueColuna();
-        document.querySelectorAll('.input-hora').forEach(inp => inp.disabled = true);
-        recalcularTudo();
+    nomes_completos = {
+        "Adelio": "Adelio Costa Felinto", "Otto": "Albert Otto Azevedo",
+        "Andre": "Andre Luis Fernandes", "Cleiton": "Cleiton Taumaturgo",
+        "Cleverson": "Cleverson dos Santos", "Edson": "Edson Fonteles Portela",
+        "Frank": "Franker Wendell Dias", "Gabriel": "Gabriel de Oliveira",
+        "Costa": "Costa", "Hazafe": "Hazafe Pacheco de Alencar",
+        "Amarildo": "Joao Amarildo Reis", "Igorh": "Igorh Coutinho Martins",
+        "Joao": "Joao Marcus Oliveira",
+        "Dayvid": "Jose Deyvid Monteiro",
+        "Leandro": "Leandro Magalhães", "Lindomar": "Lindomar Bras Mota",
+        "Lucas": "Lucas Alves Pereira", "Luiz": "Luiz Andrade",
+        "Mathias": "Mathias Pires de Campos",
+        "Milton": "Milton Braga de Souza",
+        "Pascoal": "Pascoal Brito de Araujo", "Paulo": "Paulo Andre Silva",
+        "Perisson": "Perisson Parmigiani", "Renan": "Renan da Silva Nascimento",
+        "Roberto": "Roberto Adolfo Boesing", "Ronie": "Ronie Welter",
+        "Rui": "Rui de Almeida Vasconcelos", "Sergio": "Sergio Carneiro Rodrigues",
+        "Tarso": "Tarso de Souza Cruz", "Vitor": "Vitor Augusto Fernandes",
+        "Bento": "Vitor da Costa Bento", "Wellber": "Wellber Nogueira Barros",
+        "Andrade": "Luiz Andrade de Souza", "Yago": "Yago Bezerra Correia",
+        "Cauê": "Caue Montanari", "Daniela": "Daniela Goncalves Fabricio",
+        "Ernesto": "Ernesto da Silva Kaster", "Ruben": "Francisco Rubenicio Souza",
+        "Rodrigo": "Rodrigo Silva Melo", "Ronaldo": "Ronaldo Rodrigues Parreao",
+        "Thales": "Thales Araujo Penna", "Serafim": "Tiago Carvalho Serafim",
+        "Tiago": "Tiago Pinto Quirino"
     }
-}
-
-function ativarEdicaoDia(diaIndex) {
-    if (diaEditandoIndex !== null && diaEditandoIndex !== diaIndex) sairEdicaoDia();
-    diaEditandoIndex = diaIndex;
-    
-    // Torna toda a coluna editável, mas limpa apenas os campos com SO
-    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const nome = getNomeFromRow(row);
-        const status = ESCALA_MENSAL[nome]?.[diaIndex] || "";
-        const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
-        if (inp) {
-            if (status === "SO") {
-                // Limpa o campo e deixa editável
-                inp.disabled = false;
-                inp.value = "";
-                inp.placeholder = "0,0";
-                inp.classList.remove("status-so");
-                inp.removeAttribute('data-status');
-            } else if (!isStatusBloqueado(status)) {
-                inp.disabled = false;
-                inp.placeholder = "0,0";
-                if (inp.value === "SO") inp.value = "";
-            } else {
-                inp.disabled = true;
-            }
-        }
-    });
-    
-    destacarColuna(diaIndex);
-    const th = document.querySelector(`#tableHeader th:nth-child(${diaIndex+2})`);
-    if (th) th.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
-    const diaNum = String(diaIndex+1).padStart(2,'0');
-    document.getElementById('badgeDiaEdicao').textContent = `✏️ EDITANDO DIA ${diaNum}`;
-    document.getElementById('badgeDiaEdicao').classList.add('visivel');
-    document.getElementById('btnSairDia').style.display = 'inline-block';
-    document.querySelectorAll('.btn-dia').forEach((btn,i) => btn.classList.toggle('dia-editando', i===diaIndex));
-    showToast(`✏️ Dia ${diaNum} liberado para edição`);
-}
-
-function destacarColuna(diaIndex) {
-    limparDestaqueColuna();
-    const colIdx = diaIndex+1;
-    document.querySelectorAll('#tableHeader tr th')[colIdx]?.classList.add('col-ativa');
-    document.querySelectorAll('#tabelaHoras tbody tr').forEach(row => {
-        if (row.cells[colIdx]) row.cells[colIdx].classList.add('col-ativa');
-    });
-}
-
-function limparDestaqueColuna() {
-    document.querySelectorAll('.col-ativa').forEach(el => el.classList.remove('col-ativa'));
-}
-
-// ===== FUNÇÃO PARA EDITAR STATUS POR TOQUE LONGO =====
-function habilitarEdicaoStatus(inp, row, diaIndex) {
-    const nome = getNomeFromRow(row);
-    const statusAtual = ESCALA_MENSAL[nome]?.[diaIndex] || "";
-    // Só permite editar se for um status bloqueado (FR, FS, FE, DM, etc.)
-    if (!statusAtual || statusAtual === "SO") {
-        showToast("⚠️ Apenas células com status (FR, FS, etc.) podem ser editadas.");
-        return;
+    for nome, group in grupos.items():
+        piloto = Pilot(name=nome, full_name=nomes_completos.get(nome, nome), group=group)
+        db.session.add(piloto)
+    db.session.commit()
+    m_atual, y_atual = datetime.now().month, datetime.now().year
+    dados_foto = {
+        "Andrade": {1: 3.4, 2: 6.4, 3: 2.9, 5: 5.9, 6: 7.9, 7: 8.0, 9: 6.8},
+        "Amarildo": {1: 5.6, 2: 4.7, 3: 4.8, 4: 6.6, 5: 0.0, 7: 4.9, 8: 4.5},
+        "Cleverson": {1: 6.2, 2: 5.9, 4: 7.5, 5: 3.6, 6: 4.8, 7: 8.5},
+        "Hazafe": {3: 3.6, 4: 6.7, 8: 8.1},
+        "Dayvid": {3: 5.5, 4: 7.5, 8: 7.1},
+        "Edson": {1: 6.5, 2: 3.2, 3: 5.3, 4: 6.3, 5: 0.0, 6: 4.3, 8: 7.4, 9: 3.4},
+        "Frank": {1: 7.0, 2: 7.2, 4: 6.7, 5: 8.0, 7: 8.0},
+        "Gabriel": {1: 5.8, 3: 7.5, 5: 5.4, 6: 2.5, 7: 8.8, 8: 7.2},
+        "Igorh": {1: 7.0, 3: 7.5, 5: 7.5, 6: 2.4, 7: 8.0},
+        "Leandro": {1: 6.4, 2: 7.0, 3: 6.5, 6: 3.8, 7: 7.3, 8: 8.8},
+        "Paulo": {7: 8.2},
+        "Ronie": {1: 8.6, 3: 9.2, 4: 8.2, 8: 9.1, 9: 7.0},
+        "Sergio": {2: 8.0, 3: 6.0, 4: 8.7, 5: 6.4, 7: 8.2},
+        "Tarso": {1: 0.0},
+        "Otto": {2: 3.8, 3: 6.4, 4: 1.0, 8: 7.3},
+        "Dany": {3: 7.5, 8: 4.0},
+        "Lucas": {8: 7.1},
+        "Roberto": {1: 3.7, 2: 3.0},
+        "Renan": {2: 5.5, 4: 5.5, 5: 6.4, 7: 8.0, 8: 6.0},
+        "Wellber": {1: 4.0, 3: 6.3, 4: 7.8, 5: 6.1, 7: 7.8},
+        "Bento": {8: 6.2, 9: 6.8},
+        "Costa": {1: 3.7, 2: 3.0, 5: 6.6, 6: 2.2, 8: 5.0},
+        "Vitor": {2: 7.2, 5: 6.6, 6: 6.2, 7: 8.0},
+        "Mathias": {3: 5.2, 4: 6.5, 8: 6.2},
+        "Cleiton": {2: 4.6, 3: 6.2},
+        "Joao": {2: 3.0, 5: 6.3, 7: 6.6},
+        "Pascoal": {6: 2.8},
+        "Lindomar": {5: 7.1, 6: 1.0, 7: 7.3},
+        "Perisson": {3: 7.7, 8: 2.8, 9: 7.0},
+        "Rui": {5: 7.5, 6: 2.9, 7: 7.9},
+        "Yago": {3: 7.3, 4: 5.7, 6: 6.1},
+        "Cauê": {3: 7.3, 5: 7.1, 7: 8.2},
+        "Ruben": {2: 3.0, 4: 5.7, 9: 7.0},
+        "Daniela": {6: 2.9, 7: 7.9},
+        "Thales": {5: 7.2, 6: 2.8},
+        "Serafim": {6: 6.1, 7: 6.6, 8: 2.8},
+        "Ronaldo": {7: 7.3},
+        "Rodrigo": {3: 6.2, 5: 6.3},
+        "Tiago": {3: 7.7}
     }
-    // Habilita edição
-    inp.disabled = false;
-    inp.classList.add('editando-longpress');
-    inp.focus();
-    inp.select();
-    // Salvar ao pressionar Enter
-    inp.onkeydown = async function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const novoValor = this.value.trim().toUpperCase();
-            if (novoValor && (getStatusFromValue(novoValor) || novoValor === "SO")) {
-                // Atualiza a escala local
-                ESCALA_MENSAL[nome][diaIndex] = novoValor;
-                // Remove destaque e bloqueia novamente
-                this.classList.remove('editando-longpress');
-                this.disabled = true;
-                // Atualiza cor
-                atualizarCorInput(this);
-                // Salva no backend (envia a alteração do status - vamos enviar um log especial)
-                await salvarStatusNoBackend(nome, diaIndex, novoValor);
-                showToast(`✅ Status alterado para ${novoValor}`);
-                // Recalcula a interface
-                recalcularTudo();
-            } else {
-                showToast('❌ Status inválido. Use SO, FR, FS, FE, DM, etc.');
-            }
-            this.onkeydown = null;
-        }
-    };
-    // Se perder o foco sem salvar, cancela
-    inp.onblur = function() {
-        this.classList.remove('editando-longpress');
-        this.disabled = true;
-        this.value = statusAtual;
-        this.onkeydown = null;
-        this.onblur = null;
-        showToast('Edição cancelada');
-    };
-}
+    for p_name, dias_dados in dados_foto.items():
+        p_obj = Pilot.query.filter_by(name=p_name).first()
+        if p_obj:
+            for d_num, h_val in dias_dados.items():
+                db.session.add(FlightLog(pilot_id=p_obj.id, day=d_num, month=m_atual, year=y_atual, hours=float(h_val)))
+    db.session.commit()
 
-async function salvarStatusNoBackend(nome, dia, novoStatus) {
-    // Envia uma requisição para atualizar a escala (precisa de uma nova rota no backend)
-    // Vamos usar a mesma rota /api/data para salvar um log especial? Ou criar uma nova.
-    // Para simplificar, vamos enviar um valor negativo de horas para indicar status?
-    // Melhor: criar uma rota específica no backend.
-    // Como estamos apenas no front-end, vou simular o salvamento e mostrar toast.
-    // Na prática, você precisaria criar uma rota /api/update_status no app.py
-    // Vou fazer o front-end enviar uma requisição para /api/update_status com {pilot, day, status}
-    try {
-        const res = await fetch('/api/update_status', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pilot: nome, day: dia, status: novoStatus })
-        });
-        if (!res.ok) throw new Error('Falha ao salvar status');
-    } catch(e) {
-        console.error('Erro ao salvar status:', e);
-        showToast('❌ Erro ao salvar status no servidor');
-    }
-}
+from programacao import register_routes
+register_routes(app, db)
 
-// ===== NOVA FUNÇÃO: MODAL COMPARATIVO COM GRÁFICO =====
-function mostrarComparativoDia(diaIndex) {
-    const diaNumero = diaIndex + 1;
-    const dadosDia = {};
-    const horasPorDia = new Array(DIAS).fill(0);
-    
-    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const nome = getNomeFromRow(row);
-        const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
-        let horas = 0;
-        if (inp && !inp.disabled) {
-            horas = parseHora(inp.value);
-        }
-        dadosDia[nome] = horas;
-        // Acumula horas por dia (para o gráfico)
-        row.querySelectorAll('.input-hora').forEach((inp, i) => {
-            if (!inp.disabled) {
-                horasPorDia[i] += parseHora(inp.value);
-            }
-        });
-    });
-    
-    // Ordena pilotos por horas decrescentes
-    const pilotosOrdenados = Object.keys(dadosDia).sort((a,b) => dadosDia[b] - dadosDia[a]);
-    
-    let html = `<div class="card-detalhe"><h2 style="text-align:center; margin-bottom:20px;">📅 Dia ${String(diaNumero).padStart(2, '0')}</h2>`;
-    
-    // Gráfico de barras da evolução mensal
-    html += `<div class="grafico-container"><canvas id="graficoEvolucao" width="600" height="200" style="width:100%; height:auto;"></canvas></div>`;
-    
-    // Tabela simples: Piloto | Horas
-    html += `<div style="margin-top: 20px;"><h3 style="color: #7a4a1e;">📊 Horas do dia</h3>`;
-    html += `<div style="overflow-x: auto;"><table class="tabela-detalhe" style="width: 100%;">`;
-    html += `<thead><tr><th style="text-align: left;">Piloto</th><th style="text-align: center;">Horas</th></thead><tbody>`;
-    pilotosOrdenados.forEach(nome => {
-        const horas = dadosDia[nome] || 0;
-        html += `<tr><td style="text-align: left; font-weight: 500;">${nome}</td>
-                 <td style="text-align: center; font-weight: bold;">${horas === 0 ? '—' : formatarHora(horas)}</td></tr>`;
-    });
-    html += `</tbody></table></div>`;
-    
-    html += `<button class="btn-fechar" id="fecharDetalhe">Fechar</button></div>`;
-    
-    const modal = document.createElement('div');
-    modal.className = 'modal-detalhe';
-    modal.innerHTML = html;
-    document.body.appendChild(modal);
-    
-    // Renderizar gráfico após o modal ser exibido
-    setTimeout(() => {
-        const canvas = document.getElementById('graficoEvolucao');
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            if (chartInstance) chartInstance.destroy();
-            const labels = Array.from({length: DIAS}, (_, i) => i+1);
-            const data = horasPorDia;
-            chartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Total de horas',
-                        data: data,
-                        backgroundColor: 'rgba(230, 168, 0, 0.6)',
-                        borderColor: 'rgba(230, 168, 0, 1)',
-                        borderWidth: 1,
-                        borderRadius: 4,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(1)}h` } }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, title: { display: true, text: 'Horas' } },
-                        x: { title: { display: true, text: 'Dia' } }
-                    }
-                }
-            });
-        }
-    }, 100);
-    
-    modal.querySelector('#fecharDetalhe').onclick = () => {
-        if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
-        modal.remove();
-    };
-    modal.onclick = e => { if (e.target === modal) { if (chartInstance) { chartInstance.destroy(); chartInstance = null; } modal.remove(); } };
-}
+with app.app_context():
+    db.create_all()
+    if Pilot.query.count() == 0:
+        povoar_dados_iniciais()
 
-// ===== OUTRAS FUNÇÕES EXISTENTES =====
-async function mostrarDisponiveis(diaRef) {
-    if (diaRef === null) { showToast("⚠️ Selecione um dia primeiro."); return; }
-    let diaSeguinte = diaRef + 1;
-    if (diaSeguinte >= DIAS) { showToast("⚠️ Último dia do mês."); return; }
-    try {
-        const res = await fetch(`/api/available_commanders/${diaSeguinte}`);
-        const data = await res.json();
-        let html = `<div class="card-detalhe"><h2 style="text-align:center;">👥 Cmtes Disponíveis - Dia ${String(diaSeguinte+1).padStart(2,'00')}</h2>`;
-        for (let grupo in data) {
-            html += `<h3 style="margin-top: 15px;">${grupo}</h3>`;
-            if (data[grupo].length > 0) {
-                html += `<ul style="margin: 5px 0 15px 20px;">`;
-                data[grupo].forEach(c => {
-                    const horas = c.horas_totais || 0;
-                    html += `<li>${c.name} (${c.status}) — <strong>${horas.toFixed(1)}h</strong></li>`;
-                });
-                html += `</ul>`;
-            } else {
-                html += `<p>Nenhum piloto disponível.</p>`;
-            }
-        }
-        html += `<button class="btn-fechar" id="fecharDisponiveis">Fechar</button></div>`;
-        const modal = document.createElement('div');
-        modal.className = 'modal-detalhe';
-        modal.innerHTML = html;
-        document.body.appendChild(modal);
-        modal.querySelector('#fecharDisponiveis').onclick = () => modal.remove();
-        modal.onclick = e => { if (e.target === modal) modal.remove(); };
-    } catch(e) { showToast("❌ Erro ao carregar disponíveis."); }
-}
-
-async function carregarDoBackend() {
-    const syncSpan = document.getElementById('syncStatus');
-    syncSpan.innerHTML = '⏳ Carregando...';
-    try {
-        const res = await fetch('/api/data');
-        if (!res.ok) throw new Error('Falha na requisição');
-        const data = await res.json();
-        const pilots = data.pilots;
-        const logs = data.logs;
-
-        atualizarDias();
-
-        const thead = document.getElementById('tableHeader');
-        thead.innerHTML = `<tr><th>👤 PILOTO</th>${Array.from({length:DIAS},(_,i)=>`<th>${String(i+1).padStart(2,'00')}</th>`).join('')}<th>⭐ TOTAL</th>`;
-
-        const tbody = document.getElementById('planilhaBody');
-        tbody.innerHTML = '';
-
-        const grupos = { "CESSNA 206/210":[], "CARAVAN":[], "COPILOTO":[] };
-        pilots.forEach(p => grupos[p.group].push(p));
-
-        for (let grupo of ["CESSNA 206/210","CARAVAN","COPILOTO"]) {
-            const titleRow = document.createElement('tr');
-            titleRow.classList.add('group-title-row');
-            titleRow.innerHTML = `<td colspan="${DIAS+2}"><i class="fas fa-${grupo==="COPILOTO"?"headset":"plane"}"></i> ${grupo}<\/td>`;
-            tbody.appendChild(titleRow);
-
-            for (let p of grupos[grupo]) {
-                const row = document.createElement('tr');
-                row.classList.add('membro-row');
-                const nomeCell = document.createElement('td');
-                nomeCell.textContent = p.name;
-                row.appendChild(nomeCell);
-                let total = 0;
-
-                for (let i = 0; i < DIAS; i++) {
-                    const td = document.createElement('td');
-                    const inp = document.createElement('input');
-                    inp.type = 'text';
-                    inp.inputMode = 'decimal';
-                    inp.classList.add('input-hora');
-                    inp.placeholder = '0,0';
-
-                    const valor = logs[p.name]?.[i+1] || 0;
-                    const statusOriginal = ESCALA_MENSAL[p.name]?.[i] || "";
-                    if (valor > 0) {
-                        inp.value = formatarHora(valor);
-                        total += valor;
-                    } else if (statusOriginal && statusOriginal !== "SO") {
-                        inp.value = statusOriginal;
-                        inp.setAttribute('data-status', statusOriginal);
-                        inp.classList.add(getStatusClass(statusOriginal));
-                    } else {
-                        inp.value = "";
-                    }
-                    
-                    atualizarCorInput(inp);
-                    inp.disabled = true;
-
-                    // Evento para toque longo (editar status)
-                    let longPressTimer = null;
-                    inp.addEventListener('touchstart', (e) => {
-                        longPressTimer = setTimeout(() => {
-                            // Se estiver desbloqueado, permite editar status
-                            if (isEditing) {
-                                habilitarEdicaoStatus(inp, row, i);
-                            }
-                        }, 500);
-                    });
-                    inp.addEventListener('touchend', () => { clearTimeout(longPressTimer); });
-                    inp.addEventListener('touchcancel', () => { clearTimeout(longPressTimer); });
-
-                    // Eventos normais de edição de horas
-                    inp.addEventListener('input', function() {
-                        if (diaEditandoIndex !== null && (diaEditandoIndex === i) && isEditing) {
-                            atualizarTotalLinha(row);
-                            recalcularTudo();
-                            if (isEditing && password) salvarNoBackend();
-                        }
-                    });
-                    inp.addEventListener('blur', function() {
-                        if (diaEditandoIndex !== null && (diaEditandoIndex === i) && isEditing) {
-                            let v = parseHora(this.value);
-                            if (v > 0) {
-                                this.value = formatarHora(v);
-                            }
-                            atualizarCorInput(this);
-                            atualizarTotalLinha(row);
-                            recalcularTudo();
-                            if (isEditing && password) salvarNoBackend();
-                        }
-                    });
-                    td.appendChild(inp);
-                    row.appendChild(td);
-                }
-                const totalCell = document.createElement('td');
-                totalCell.classList.add('total-cell');
-                totalCell.textContent = formatarHora(total);
-                row.appendChild(totalCell);
-                tbody.appendChild(row);
-            }
-        }
-        recalcularTudo();
-        criarBotoesDias();
-        sairEdicaoDia();
-        syncSpan.innerHTML = '✅ Carregado';
-        setTimeout(() => syncSpan.innerHTML = '💾 Sincronizado', 2000);
-    } catch(e) {
-        console.error(e);
-        syncSpan.innerHTML = '❌ Erro ao carregar';
-    }
-}
-
-async function salvarNoBackend() {
-    if (!isEditing || !password) return;
-    const syncSpan = document.getElementById('syncStatus');
-    syncSpan.innerHTML = '⏳ Salvando...';
-    const logs = {};
-
-    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const nome = getNomeFromRow(row);
-        logs[nome] = {};
-        row.querySelectorAll('.input-hora').forEach((inp, i) => {
-            if (!inp.disabled) {
-                const val = parseHora(inp.value);
-                if (val > 0) logs[nome][i+1] = val;
-            }
-        });
-    });
-    try {
-        await fetch('/api/data', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password, logs })
-        });
-        syncSpan.innerHTML = '✅ Salvo';
-        setTimeout(() => syncSpan.innerHTML = '💾 Sincronizado', 2000);
-    } catch(e) {
-        syncSpan.innerHTML = '❌ Erro ao salvar';
-    }
-}
-
-function criarBotoesDias() {
-    const container = document.getElementById('botoesDias');
-    container.innerHTML = '';
-    for (let i = 0; i < DIAS; i++) {
-        const btn = document.createElement('button');
-        btn.classList.add('btn-dia');
-        btn.setAttribute('data-dia', i);
-        btn.innerHTML = `<span class="dia-num">${String(i+1).padStart(2,'00')}</span><span class="dia-total"></span>`;
-        let touchTimer = null, isLongPress = false;
-        btn.addEventListener('touchstart', (e) => {
-            e.preventDefault(); isLongPress = false;
-            touchTimer = setTimeout(() => { isLongPress=true; selecionarDia(i,btn); mostrarDisponiveis(i); }, 500);
-        });
-        btn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            if (touchTimer) clearTimeout(touchTimer);
-            if (!isLongPress) { selecionarDia(i,btn); if(isEditing) ativarEdicaoDia(i); else mostrarComparativoDia(i); }
-        });
-        btn.addEventListener('touchcancel', () => { if (touchTimer) clearTimeout(touchTimer); });
-        btn.onclick = () => { selecionarDia(i,btn); if(isEditing) ativarEdicaoDia(i); else mostrarComparativoDia(i); };
-        btn.oncontextmenu = (e) => { e.preventDefault(); selecionarDia(i,btn); mostrarDisponiveis(i); return false; };
-        container.appendChild(btn);
-    }
-    atualizarTotaisBotoesDias();
-}
-
-function selecionarDia(i, btn) {
-    document.querySelectorAll('.btn-dia').forEach(b => b.classList.remove('dia-selecionado'));
-    btn.classList.add('dia-selecionado');
-    diaReferencia = i;
-}
-
-function exibirModalSenha() {
-    return new Promise((resolve) => {
-        const modalDiv = document.createElement('div');
-        modalDiv.className = 'modal-senha';
-        modalDiv.innerHTML = `
-            <div class="card-senha">
-                <h3>🔐 AUTENTICAÇÃO</h3>
-                <p>Digite a senha para editar:</p>
-                <input type="password" id="senhaInput" placeholder="Senha" autocomplete="off">
-                <div class="botoes-senha">
-                    <button class="btn-modal" id="confirmarSenha">Confirmar</button>
-                    <button class="btn-modal" id="cancelarSenha">Cancelar</button>
-                </div>
-            </div>`;
-        document.body.appendChild(modalDiv);
-        const inputSenha = modalDiv.querySelector('#senhaInput');
-        const confirmar = () => { const s=inputSenha.value; modalDiv.remove(); resolve(s); };
-        const cancelar = () => { modalDiv.remove(); resolve(null); };
-        modalDiv.querySelector('#confirmarSenha').onclick = confirmar;
-        modalDiv.querySelector('#cancelarSenha').onclick = cancelar;
-        inputSenha.focus();
-        inputSenha.addEventListener('keypress', (e) => { if(e.key==='Enter') confirmar(); });
-    });
-}
-
-async function login() {
-    if (isEditing) { showToast("⚠️ Já está editando."); return; }
-    const senha = await exibirModalSenha();
-    if (senha === "Emerson" || senha === "Bispo") {
-        password = senha;
-        isEditing = true;
-        document.getElementById('statusBadge').innerHTML = '🔓 EDIÇÃO ATIVA';
-        document.getElementById('editModeChip').innerHTML = '✏️ EDIÇÃO ATIVO';
-        document.getElementById('btnLimpar').disabled = false;
-        document.getElementById('btnBloquear').disabled = false;
-        showToast("✅ Edição ativada! Toque num dia para editar a coluna.");
-    } else if (senha !== null) {
-        showToast("❌ Senha incorreta.");
-    }
-}
-
-function bloquear() {
-    if (!isEditing) { showToast("ℹ️ Já está em modo leitura."); return; }
-    isEditing = false;
-    password = "";
-    sairEdicaoDia();
-    document.getElementById('statusBadge').innerHTML = '🔒 SOMENTE LEITURA';
-    document.getElementById('editModeChip').innerHTML = '📖 MODO VISUALIZAÇÃO';
-    document.getElementById('btnLimpar').disabled = true;
-    document.getElementById('btnBloquear').disabled = true;
-    showToast("🔒 Modo leitura ativado.");
-}
-
-function limpar() {
-    if (!isEditing) return showToast("⚠️ Desbloqueie primeiro.");
-    if (confirm("Limpar todos os valores?")) {
-        document.querySelectorAll('.input-hora').forEach(inp => {
-            inp.value = '';
-        });
-        recalcularTudo();
-        salvarNoBackend();
-        showToast("🧹 Valores limpos.");
-    }
-}
-
-function getStatusClass(status) {
-    const map = {
-        "DM":"status-dm","CM":"status-cm","VO":"status-vo","EA":"status-ea",
-        "FR":"status-fr","FS":"status-fs","FE":"status-fe","RE":"status-re",
-        "SO":"status-so","TR":"status-tr","TN":"status-tn","CQ":"status-cq"
-    };
-    return map[status] || "";
-}
-
-function isStatusBloqueado(status) {
-    return ["DM","CM","EA","FR","FS","FE","TR","TN","CQ","RE"].includes(status);
-}
-
-document.getElementById('btnDesbloquear').onclick = login;
-document.getElementById('btnBloquear').onclick = bloquear;
-document.getElementById('btnLimpar').onclick = limpar;
-document.getElementById('btnSairDia').onclick = sairEdicaoDia;
-
-carregarDoBackend();
-</script>
-</body>
-</html>
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=os.environ.get("PORT", 5000))
