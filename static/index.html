@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Planilha de Horas</title>
+
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#6e4a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Planilha">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: radial-gradient(circle at 20% 30%, #b87c4f, #6e4a2e);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: #fcf7e8;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 32px;
+      padding: 40px 28px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 0 0 2px #fff9e8, inset 0 0 0 6px #d9c894;
+      max-width: 380px;
+      width: 100%;
+      animation: fadeUp 0.6s ease-out;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .app-icon {
+      width: 88px;
+      height: 88px;
+      background: linear-gradient(135deg, #cb9e6b, #7a4f2c);
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 40px;
+      color: white;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #3b2a1f;
+      text-shadow: 2px 2px 0 #cdb086;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 15px;
+      color: #5a3e22;
+      margin-bottom: 28px;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn-primary {
+      background: radial-gradient(circle at 30% 20%, #f3de9f, #cb9e6b);
+      color: #2c2418;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 60px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      display: block;
+      box-shadow: 0 5px 0 #7a4f2c;
+      text-shadow: 0 1px 0 #fff3cf;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+
+    .btn-primary:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 #7a4f2c;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: #7a4f2c;
+      border: 2px solid #7a4f2c;
+      padding: 14px 32px;
+      border-radius: 60px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      display: none;
+      background: rgba(255,255,255,0.3);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(122, 79, 44, 0.1);
+    }
+
+    .footer-text {
+      margin-top: 24px;
+      font-size: 12px;
+      color: #5a3e22;
+      line-height: 1.6;
+    }
+
+    .footer-text span {
+      color: #7a4f2c;
+      font-weight: 600;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: radial-gradient(circle at 20% 30%, #4a3228, #2a1a12);
+      }
+      .card {
+        background: #2a1f1a;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+      }
+      h1 {
+        color: #e8d5b0;
+        text-shadow: 2px 2px 0 #3b2a1f;
+      }
+      .subtitle {
+        color: #b89a7a;
+      }
+      .footer-text {
+        color: #b89a7a;
+      }
+      .btn-secondary {
+        color: #e8d5b0;
+        border-color: #e8d5b0;
+        background: rgba(255,255,255,0.1);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="app-icon">✈️</div>
+    <h1>Planilha de Horas</h1>
+    <p class="subtitle">Controle suas horas de voo</p>
+
+    <div class="btn-group">
+      <a href="/planilha" class="btn-primary">
+        Acessar Planilha
+      </a>
+      <button id="install-btn" class="btn-secondary">
+        Instalar como App
+      </button>
+    </div>
+
+    <p class="footer-text">
+      Dica: no Chrome, toque em "Compartilhar" → <span>"Adicionar à Tela Inicial"</span><br>
+      para usar como um aplicativo nativo.
+    </p>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('Service Worker registrado!', reg))
+          .catch(err => console.log('Erro no Service Worker:', err));
+      });
+    }
+
+    let deferredPrompt;
+    const installBtn = document.getElementById('install-btn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (installBtn) installBtn.style.display = 'block';
+    });
+
+    if (installBtn) {
+      installBtn.addEventListener('click', () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then((choiceResult) => {
+            console.log(choiceResult.outcome);
+            deferredPrompt = null;
+            installBtn.style.display = 'none';
+          });
+        }
+      });
+    }
+
+    window.addEventListener('appinstalled', () => {
+      console.log('App instalado!');
+      if (installBtn) installBtn.style.display = 'none';
+    });
+  </script>
+</body>
+</html>
