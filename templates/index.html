@@ -614,7 +614,7 @@ async function salvarStatusNoBackend(nome, dia, novoStatus) {
     }
 }
 
-// ===== NOVA FUNÇÃO: MODAL COMPARATIVO (apenas tabela com barra) =====
+// ===== MODAL COMPARATIVO (apenas tabela com barra) =====
 function mostrarComparativoDia(diaIndex) {
     const diaNumero = diaIndex + 1;
     const dadosDia = {};
@@ -661,7 +661,7 @@ function mostrarComparativoDia(diaIndex) {
     modal.onclick = e => { if (e.target === modal) modal.remove(); };
 }
 
-// ===== OUTRAS FUNÇÕES EXISTENTES =====
+// ===== LISTA DE DISPONÍVEIS (APENAS PRIMEIRO NOME) =====
 async function mostrarDisponiveis(diaRef) {
     if (diaRef === null) { showToast("⚠️ Selecione um dia primeiro."); return; }
     let diaSeguinte = diaRef + 1;
@@ -673,10 +673,15 @@ async function mostrarDisponiveis(diaRef) {
         for (let grupo in data) {
             html += `<h3 style="margin-top: 15px;">${grupo}</h3>`;
             if (data[grupo].length > 0) {
-                html += `<ul style="margin: 5px 0 15px 20px;">`;
+                html += `<ul style="margin: 5px 0 15px 20px; list-style: none; padding-left: 0;">`;
                 data[grupo].forEach(c => {
                     const horas = c.horas_totais || 0;
-                    html += `<li>${c.name} (${c.status}) — <strong>${horas.toFixed(1)}h</strong></li>`;
+                    // Extrai apenas o primeiro nome
+                    const primeiroNome = c.name.split(' ')[0];
+                    html += `<li style="padding: 4px 0; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <span>${primeiroNome} (${c.status})</span>
+                        <strong>${horas.toFixed(1)}h</strong>
+                    </li>`;
                 });
                 html += `</ul>`;
             } else {
