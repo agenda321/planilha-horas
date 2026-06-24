@@ -12,6 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="Planilha Horas">
     <link rel="apple-touch-icon" href="/icon-192.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -82,6 +83,7 @@
             display: flex; flex-direction: column; align-items: center;
             justify-content: center; gap: 2px; line-height: 1.2;
             width: 100%; min-width: 0;
+            touch-action: manipulation;
         }
         .btn-dia .dia-num { font-size: 0.8rem; font-weight: bold; }
         .btn-dia .dia-total { font-size: 0.55rem; color: #5a3a10; white-space: nowrap; }
@@ -129,12 +131,12 @@
             border: 2px solid #c9aa77;
             border-radius: 16px;
             transition: all 0.2s;
+            touch-action: manipulation;
         }
         .input-hora::placeholder { color: #aaa; font-style: italic; font-size: 0.7rem; }
         .input-hora.has-value { background: #fff1b5; border-color: #e4b149; box-shadow: 0 0 6px gold; }
         .input-hora.streak-day { background: #ffcc99; border-color: #e67300; }
 
-        /* Cores dos status */
         .input-hora[data-status="DM"], .input-hora[data-status="CM"] { background: #ffb366; border-color: #cc5200; color: #662200; font-weight: bold; }
         .input-hora[data-status="VO"], .input-hora[data-status="CQ"], .input-hora[data-status="TN"] { background: #99ccff; border-color: #0066cc; color: #003366; font-weight: bold; }
         .input-hora[data-status="EA"], .input-hora[data-status="TR"] { background: #ffff99; border-color: #cccc00; color: #666600; font-weight: bold; }
@@ -144,6 +146,13 @@
         .input-hora[data-status="RE"] { background: #ffccff; border-color: #cc66cc; color: #660066; font-weight: bold; }
         .input-hora[data-status="SO"] { background: #ffffff; border-color: #999999; color: #333333; font-weight: bold; }
         .input-hora[data-status="default"] { background: #f9f2e0; border-color: #c9aa77; }
+
+        /* Destaque para célula em edição por toque longo */
+        .input-hora.editando-longpress {
+            outline: 3px solid #ffaa00;
+            box-shadow: 0 0 0 4px rgba(255,170,0,0.3);
+            background: #fff8e0;
+        }
 
         .total-cell { background: #e7dbbc; font-weight: bold; }
         .group-title-row td {
@@ -240,6 +249,14 @@
             pointer-events: none; white-space: nowrap;
         }
         .toast.show { opacity: 1; }
+        /* Gráfico dentro do modal */
+        .grafico-container {
+            background: #fcf7e8;
+            border-radius: 20px;
+            padding: 12px;
+            margin: 10px 0;
+            box-shadow: inset 0 0 0 1px #d9c894;
+        }
     </style>
 </head>
 <body>
@@ -371,6 +388,7 @@ let isEditing = false;
 let diaEditandoIndex = null;
 let diaReferencia = null;
 let password = "";
+let chartInstance = null;
 
 function diasNoMes(mes) {
     const m = mes.toLowerCase();
@@ -495,7 +513,6 @@ function sairEdicaoDia() {
         document.getElementById('btnSairDia').style.display = 'none';
         document.querySelectorAll('.btn-dia').forEach(btn => btn.classList.remove('dia-editando'));
         limparDestaqueColuna();
-        // Re-bloquear todos os inputs
         document.querySelectorAll('.input-hora').forEach(inp => inp.disabled = true);
         recalcularTudo();
     }
@@ -505,10 +522,27 @@ function ativarEdicaoDia(diaIndex) {
     if (diaEditandoIndex !== null && diaEditandoIndex !== diaIndex) sairEdicaoDia();
     diaEditandoIndex = diaIndex;
     
-    // Torna toda a coluna editável
+    // Torna toda a coluna editável, mas limpa apenas os campos com SO
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
+        const nome = getNomeFromRow(row);
+        const status = ESCALA_MENSAL[nome]?.[diaIndex] || "";
         const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
-        if (inp) inp.disabled = false;
+        if (inp) {
+            if (status === "SO") {
+                // Limpa o campo e deixa editável
+                inp.disabled = false;
+                inp.value = "";
+                inp.placeholder = "0,0";
+                inp.classList.remove("status-so");
+                inp.removeAttribute('data-status');
+            } else if (!isStatusBloqueado(status)) {
+                inp.disabled = false;
+                inp.placeholder = "0,0";
+                if (inp.value === "SO") inp.value = "";
+            } else {
+                inp.disabled = true;
+            }
+        }
     });
     
     destacarColuna(diaIndex);
@@ -535,56 +569,116 @@ function limparDestaqueColuna() {
     document.querySelectorAll('.col-ativa').forEach(el => el.classList.remove('col-ativa'));
 }
 
-// ======================== MODAL COMPARATIVO CORRIGIDO (apenas tabela) ========================
+// ===== FUNÇÃO PARA EDITAR STATUS POR TOQUE LONGO =====
+function habilitarEdicaoStatus(inp, row, diaIndex) {
+    const nome = getNomeFromRow(row);
+    const statusAtual = ESCALA_MENSAL[nome]?.[diaIndex] || "";
+    // Só permite editar se for um status bloqueado (FR, FS, FE, DM, etc.)
+    if (!statusAtual || statusAtual === "SO") {
+        showToast("⚠️ Apenas células com status (FR, FS, etc.) podem ser editadas.");
+        return;
+    }
+    // Habilita edição
+    inp.disabled = false;
+    inp.classList.add('editando-longpress');
+    inp.focus();
+    inp.select();
+    // Salvar ao pressionar Enter
+    inp.onkeydown = async function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const novoValor = this.value.trim().toUpperCase();
+            if (novoValor && (getStatusFromValue(novoValor) || novoValor === "SO")) {
+                // Atualiza a escala local
+                ESCALA_MENSAL[nome][diaIndex] = novoValor;
+                // Remove destaque e bloqueia novamente
+                this.classList.remove('editando-longpress');
+                this.disabled = true;
+                // Atualiza cor
+                atualizarCorInput(this);
+                // Salva no backend (envia a alteração do status - vamos enviar um log especial)
+                await salvarStatusNoBackend(nome, diaIndex, novoValor);
+                showToast(`✅ Status alterado para ${novoValor}`);
+                // Recalcula a interface
+                recalcularTudo();
+            } else {
+                showToast('❌ Status inválido. Use SO, FR, FS, FE, DM, etc.');
+            }
+            this.onkeydown = null;
+        }
+    };
+    // Se perder o foco sem salvar, cancela
+    inp.onblur = function() {
+        this.classList.remove('editando-longpress');
+        this.disabled = true;
+        this.value = statusAtual;
+        this.onkeydown = null;
+        this.onblur = null;
+        showToast('Edição cancelada');
+    };
+}
+
+async function salvarStatusNoBackend(nome, dia, novoStatus) {
+    // Envia uma requisição para atualizar a escala (precisa de uma nova rota no backend)
+    // Vamos usar a mesma rota /api/data para salvar um log especial? Ou criar uma nova.
+    // Para simplificar, vamos enviar um valor negativo de horas para indicar status?
+    // Melhor: criar uma rota específica no backend.
+    // Como estamos apenas no front-end, vou simular o salvamento e mostrar toast.
+    // Na prática, você precisaria criar uma rota /api/update_status no app.py
+    // Vou fazer o front-end enviar uma requisição para /api/update_status com {pilot, day, status}
+    try {
+        const res = await fetch('/api/update_status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pilot: nome, day: dia, status: novoStatus })
+        });
+        if (!res.ok) throw new Error('Falha ao salvar status');
+    } catch(e) {
+        console.error('Erro ao salvar status:', e);
+        showToast('❌ Erro ao salvar status no servidor');
+    }
+}
+
+// ===== NOVA FUNÇÃO: MODAL COMPARATIVO COM GRÁFICO =====
 function mostrarComparativoDia(diaIndex) {
     const diaNumero = diaIndex + 1;
     const dadosDia = {};
+    const horasPorDia = new Array(DIAS).fill(0);
     
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const nome = getNomeFromRow(row);
         const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
         let horas = 0;
-        if (inp) horas = parseHora(inp.value);
+        if (inp && !inp.disabled) {
+            horas = parseHora(inp.value);
+        }
         dadosDia[nome] = horas;
+        // Acumula horas por dia (para o gráfico)
+        row.querySelectorAll('.input-hora').forEach((inp, i) => {
+            if (!inp.disabled) {
+                horasPorDia[i] += parseHora(inp.value);
+            }
+        });
     });
     
-    const gruposMap = { "CESSNA 206/210": [], "CARAVAN": [], "COPILOTO": [] };
-    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const nome = getNomeFromRow(row);
-        const grupo = getGrupo(nome);
-        gruposMap[grupo].push({ nome, horas: dadosDia[nome] || 0 });
-    });
+    // Ordena pilotos por horas decrescentes
+    const pilotosOrdenados = Object.keys(dadosDia).sort((a,b) => dadosDia[b] - dadosDia[a]);
     
     let html = `<div class="card-detalhe"><h2 style="text-align:center; margin-bottom:20px;">📅 Dia ${String(diaNumero).padStart(2, '0')}</h2>`;
     
-    for (let grupo in gruposMap) {
-        let lista = gruposMap[grupo].sort((a, b) => b.horas - a.horas);
-        if (lista.length === 0) continue;
-        const media = lista.reduce((s, p) => s + p.horas, 0) / lista.length;
-        const maxHoras = Math.max(...lista.map(p => p.horas), 0.1);
-        
-        html += `<div style="margin-bottom: 25px;">`;
-        html += `<h3 style="margin: 0 0 10px 0; color: #7a4a1e;">✈️ ${grupo}</h3>`;
-        html += `<p style="margin: 0 0 10px 0; font-size: 0.9rem;">📊 Média do grupo: <strong>${formatarHora(media)} h</strong></p>`;
-        html += `<div style="overflow-x: auto;"><table class="tabela-detalhe" style="width: 100%;">`;
-        html += `<thead><tr><th style="text-align: left;">Piloto</th><th style="text-align: center; width: 80px;">Horas</th><th style="text-align: center; width: 80px;">vs Média</th><th style="text-align: center;">Comparativo</th></thead><tbody>`;
-        
-        lista.forEach(p => {
-            const diff = p.horas - media;
-            const perc = maxHoras > 0 ? (p.horas / maxHoras) * 100 : 0;
-            const diffText = diff >= 0 ? `+${formatarHora(diff)}` : `${formatarHora(diff)}`;
-            const diffColor = diff >= 0 ? '#2a8a2a' : '#cc2222';
-            
-            html += `<tr>
-                <td style="text-align: left; font-weight: 500;">${p.nome}</td>
-                <td style="text-align: center; font-weight: bold;">${p.horas === 0 ? '—' : formatarHora(p.horas)}</strong></td>
-                <td style="text-align: center; color: ${diffColor}; font-weight: bold;">${diffText}</td>
-                <td style="min-width: 120px;"><div class="progress-bar-wrap"><div class="barra-fill" style="width: ${perc}%;"></div></div></td>
-            </tr>`;
-        });
-        
-        html += `</tbody>}</div></div><hr style="margin: 20px 0; border-color: #ccb28b;">`;
-    }
+    // Gráfico de barras da evolução mensal
+    html += `<div class="grafico-container"><canvas id="graficoEvolucao" width="600" height="200" style="width:100%; height:auto;"></canvas></div>`;
+    
+    // Tabela simples: Piloto | Horas
+    html += `<div style="margin-top: 20px;"><h3 style="color: #7a4a1e;">📊 Horas do dia</h3>`;
+    html += `<div style="overflow-x: auto;"><table class="tabela-detalhe" style="width: 100%;">`;
+    html += `<thead><tr><th style="text-align: left;">Piloto</th><th style="text-align: center;">Horas</th></thead><tbody>`;
+    pilotosOrdenados.forEach(nome => {
+        const horas = dadosDia[nome] || 0;
+        html += `<tr><td style="text-align: left; font-weight: 500;">${nome}</td>
+                 <td style="text-align: center; font-weight: bold;">${horas === 0 ? '—' : formatarHora(horas)}</td></tr>`;
+    });
+    html += `</tbody></table></div>`;
     
     html += `<button class="btn-fechar" id="fecharDetalhe">Fechar</button></div>`;
     
@@ -592,13 +686,55 @@ function mostrarComparativoDia(diaIndex) {
     modal.className = 'modal-detalhe';
     modal.innerHTML = html;
     document.body.appendChild(modal);
-    modal.querySelector('#fecharDetalhe').onclick = () => modal.remove();
-    modal.onclick = e => { if (e.target === modal) modal.remove(); };
+    
+    // Renderizar gráfico após o modal ser exibido
+    setTimeout(() => {
+        const canvas = document.getElementById('graficoEvolucao');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+            const labels = Array.from({length: DIAS}, (_, i) => i+1);
+            const data = horasPorDia;
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total de horas',
+                        data: data,
+                        backgroundColor: 'rgba(230, 168, 0, 0.6)',
+                        borderColor: 'rgba(230, 168, 0, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(1)}h` } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Horas' } },
+                        x: { title: { display: true, text: 'Dia' } }
+                    }
+                }
+            });
+        }
+    }, 100);
+    
+    modal.querySelector('#fecharDetalhe').onclick = () => {
+        if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+        modal.remove();
+    };
+    modal.onclick = e => { if (e.target === modal) { if (chartInstance) { chartInstance.destroy(); chartInstance = null; } modal.remove(); } };
 }
 
+// ===== OUTRAS FUNÇÕES EXISTENTES =====
 async function mostrarDisponiveis(diaRef) {
     if (diaRef === null) { showToast("⚠️ Selecione um dia primeiro."); return; }
-    let diaSeguinte = diaRef+1;
+    let diaSeguinte = diaRef + 1;
     if (diaSeguinte >= DIAS) { showToast("⚠️ Último dia do mês."); return; }
     try {
         const res = await fetch(`/api/available_commanders/${diaSeguinte}`);
@@ -608,7 +744,10 @@ async function mostrarDisponiveis(diaRef) {
             html += `<h3 style="margin-top: 15px;">${grupo}</h3>`;
             if (data[grupo].length > 0) {
                 html += `<ul style="margin: 5px 0 15px 20px;">`;
-                data[grupo].forEach(c => html += `<li>${c.name} (${c.status})</li>`);
+                data[grupo].forEach(c => {
+                    const horas = c.horas_totais || 0;
+                    html += `<li>${c.name} (${c.status}) — <strong>${horas.toFixed(1)}h</strong></li>`;
+                });
                 html += `</ul>`;
             } else {
                 html += `<p>Nenhum piloto disponível.</p>`;
@@ -620,7 +759,7 @@ async function mostrarDisponiveis(diaRef) {
         modal.innerHTML = html;
         document.body.appendChild(modal);
         modal.querySelector('#fecharDisponiveis').onclick = () => modal.remove();
-        modal.onclick = e => { if (e.target===modal) modal.remove(); };
+        modal.onclick = e => { if (e.target === modal) modal.remove(); };
     } catch(e) { showToast("❌ Erro ao carregar disponíveis."); }
 }
 
@@ -668,21 +807,35 @@ async function carregarDoBackend() {
                     inp.placeholder = '0,0';
 
                     const valor = logs[p.name]?.[i+1] || 0;
+                    const statusOriginal = ESCALA_MENSAL[p.name]?.[i] || "";
                     if (valor > 0) {
                         inp.value = formatarHora(valor);
                         total += valor;
+                    } else if (statusOriginal && statusOriginal !== "SO") {
+                        inp.value = statusOriginal;
+                        inp.setAttribute('data-status', statusOriginal);
+                        inp.classList.add(getStatusClass(statusOriginal));
                     } else {
-                        const statusOriginal = ESCALA_MENSAL[p.name]?.[i] || "";
-                        if (statusOriginal) {
-                            inp.value = statusOriginal;
-                        } else {
-                            inp.value = "";
-                        }
+                        inp.value = "";
                     }
                     
                     atualizarCorInput(inp);
-                    inp.disabled = true; // inicialmente bloqueado
+                    inp.disabled = true;
 
+                    // Evento para toque longo (editar status)
+                    let longPressTimer = null;
+                    inp.addEventListener('touchstart', (e) => {
+                        longPressTimer = setTimeout(() => {
+                            // Se estiver desbloqueado, permite editar status
+                            if (isEditing) {
+                                habilitarEdicaoStatus(inp, row, i);
+                            }
+                        }, 500);
+                    });
+                    inp.addEventListener('touchend', () => { clearTimeout(longPressTimer); });
+                    inp.addEventListener('touchcancel', () => { clearTimeout(longPressTimer); });
+
+                    // Eventos normais de edição de horas
                     inp.addEventListener('input', function() {
                         if (diaEditandoIndex !== null && (diaEditandoIndex === i) && isEditing) {
                             atualizarTotalLinha(row);
@@ -733,8 +886,10 @@ async function salvarNoBackend() {
         const nome = getNomeFromRow(row);
         logs[nome] = {};
         row.querySelectorAll('.input-hora').forEach((inp, i) => {
-            const val = parseHora(inp.value);
-            if (val > 0) logs[nome][i+1] = val;
+            if (!inp.disabled) {
+                const val = parseHora(inp.value);
+                if (val > 0) logs[nome][i+1] = val;
+            }
         });
     });
     try {
@@ -845,6 +1000,19 @@ function limpar() {
         salvarNoBackend();
         showToast("🧹 Valores limpos.");
     }
+}
+
+function getStatusClass(status) {
+    const map = {
+        "DM":"status-dm","CM":"status-cm","VO":"status-vo","EA":"status-ea",
+        "FR":"status-fr","FS":"status-fs","FE":"status-fe","RE":"status-re",
+        "SO":"status-so","TR":"status-tr","TN":"status-tn","CQ":"status-cq"
+    };
+    return map[status] || "";
+}
+
+function isStatusBloqueado(status) {
+    return ["DM","CM","EA","FR","FS","FE","TR","TN","CQ","RE"].includes(status);
 }
 
 document.getElementById('btnDesbloquear').onclick = login;
