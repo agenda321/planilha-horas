@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Planilha de Voo | Registro de Horas</title>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1a237e">
@@ -13,129 +13,160 @@
     <link rel="apple-touch-icon" href="/icon-192.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
             margin: 0; min-height: 100vh;
             background: radial-gradient(circle at 20% 30%, #b87c4f, #6e4a2e);
             font-family: 'Segoe UI', 'Georgia', serif;
-            padding: 24px 16px;
-            display: flex; justify-content: center; align-items: center;
+            padding: 8px;
+            display: flex; justify-content: center; align-items: flex-start;
         }
         .skeuo-container {
             max-width: 1400px; width: 100%;
             background: #e2d6c0;
             background-image: repeating-linear-gradient(45deg, #dacaa8 0px, #dacaa8 2px, #efe3c9 2px, #efe3c9 8px);
-            border-radius: 48px;
+            border-radius: 32px;
             box-shadow: 0 25px 45px rgba(0,0,0,0.5), inset 0 1px 4px rgba(255,255,200,0.8);
-            padding: 20px;
+            padding: 10px;
         }
         .planilha-card {
-            background: #fcf7e8; border-radius: 32px;
+            background: #fcf7e8; border-radius: 24px;
             box-shadow: inset 0 0 0 2px #fff9e8, inset 0 0 0 6px #d9c894, 0 12px 28px rgba(0,0,0,0.4);
-            padding: 8px 0 12px;
+            padding: 6px 0 10px;
         }
+
+        /* ===== CABEÇALHO COMPACTO ===== */
         .cabecalho-skeuo {
-            padding: 12px 30px; border-bottom: 3px solid #b28b5e;
+            padding: 8px 16px;
+            border-bottom: 2px solid #b28b5e;
             display: flex; justify-content: space-between; align-items: center;
             flex-wrap: wrap;
             background: linear-gradient(to bottom, #fdf5e0, #f4e5ca);
-            border-radius: 28px 28px 18px 18px;
-            margin-bottom: 16px; gap: 15px;
+            border-radius: 20px 20px 12px 12px;
+            margin-bottom: 8px; gap: 8px;
         }
-        .title-area { display: flex; align-items: baseline; gap: 15px; flex-wrap: wrap; }
-        h1 { font-family: Georgia; font-size: 1.8rem; margin: 0; color: #3b2a1f; text-shadow: 3px 3px 0 #cdb086; }
+        .title-area { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        h1 { font-family: Georgia; font-size: 1.2rem; margin: 0; color: #3b2a1f; text-shadow: 2px 2px 0 #cdb086; }
         .mes-editavel {
             background: #f9f2e0; border: 2px solid #c9aa77; border-radius: 60px;
-            padding: 6px 16px; font-family: monospace; font-size: 1rem; font-weight: bold;
-            width: 150px; text-align: center;
+            padding: 4px 12px; font-family: monospace; font-size: 0.85rem; font-weight: bold;
+            width: 110px; text-align: center;
         }
         .mes-editavel:disabled { background: #e9e0cf; opacity: 0.8; }
         .badge-senha {
-            background: #b97f4b; border-radius: 60px; padding: 6px 16px;
-            font-size: 0.75rem; font-weight: bold; color: #fff1cf;
+            background: #b97f4b; border-radius: 60px; padding: 4px 12px;
+            font-size: 0.7rem; font-weight: bold; color: #fff1cf;
             box-shadow: inset 0 1px 2px #ffdd99, 0 3px 6px rgba(0,0,0,0.2);
         }
+        .badge-dia-edicao {
+            background: #e6a800; border-radius: 60px; padding: 4px 12px;
+            font-size: 0.7rem; font-weight: bold; color: #3b2a00; display: none;
+        }
+        .badge-dia-edicao.visivel { display: inline-block; }
+
+        /* ===== BARRA DE AÇÕES COMPACTA ===== */
+        .top-actions {
+            padding: 0 10px; display: flex; justify-content: space-between;
+            align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;
+        }
+        .button-group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
         .btn-skeuo {
             background: radial-gradient(circle at 30% 20%, #f3de9f, #cb9e6b);
-            border: none; font-size: 0.85rem; font-weight: bold; padding: 8px 18px;
-            border-radius: 60px; box-shadow: 0 5px 0 #7a4f2c; cursor: pointer; transition: 0.05s linear;
+            border: none; font-size: 0.75rem; font-weight: bold; padding: 7px 14px;
+            border-radius: 60px; box-shadow: 0 4px 0 #7a4f2c; cursor: pointer;
+            transition: 0.05s linear; touch-action: manipulation;
         }
-        .btn-skeuo:active { transform: translateY(3px); box-shadow: 0 2px 0 #7a4f2c; }
-        .btn-skeuo:disabled { opacity: 0.55; cursor: default; transform: none; }
-        .button-group { display: flex; gap: 12px; flex-wrap: wrap; }
-        .top-actions {
-            padding: 0 20px; display: flex; justify-content: space-between;
-            flex-wrap: wrap; gap: 15px; margin-bottom: 20px;
+        .btn-skeuo:active { transform: translateY(3px); box-shadow: 0 1px 0 #7a4f2c; }
+        .btn-skeuo:disabled { opacity: 0.45; cursor: default; transform: none; }
+
+        /* ===== SYNC + AJUDA ===== */
+        .info-bar {
+            display: flex; justify-content: flex-end; align-items: center;
+            padding: 0 12px 6px; gap: 8px;
         }
+        .sync-status {
+            font-size: 0.65rem; background: #4c351e;
+            padding: 3px 10px; border-radius: 60px; color: #ffe1a0;
+        }
+        .btn-ajuda {
+            background: #7a5230; color: #ffe1a0; border: none;
+            width: 28px; height: 28px; border-radius: 50%;
+            font-size: 0.85rem; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            touch-action: manipulation;
+        }
+
+        /* ===== BOTÕES DOS DIAS ===== */
         .dias-botoes {
             display: grid; grid-template-columns: repeat(7, 1fr);
-            gap: 6px; margin: 16px 12px; padding: 10px;
-            background: #ddcdac; border-radius: 40px;
+            gap: 4px; margin: 0 8px 8px; padding: 8px;
+            background: #ddcdac; border-radius: 28px;
             box-shadow: inset 0 0 0 2px #fef1cf, inset 0 0 0 4px #c2a570;
-            width: calc(100% - 24px);
+            touch-action: none;
         }
         .btn-dia {
             background: radial-gradient(circle at 30% 20%, #f0dc9f, #c29a5e);
-            border: none; font-size: 0.8rem; font-weight: bold; padding: 8px 0;
-            border-radius: 60px; box-shadow: 0 3px 0 #6b4828; cursor: pointer;
+            border: none; font-size: 0.7rem; font-weight: bold; padding: 7px 0;
+            border-radius: 50px; box-shadow: 0 3px 0 #6b4828; cursor: pointer;
             transition: 0.05s linear; text-align: center;
             display: flex; flex-direction: column; align-items: center;
-            justify-content: center; gap: 2px; line-height: 1.2;
-            width: 100%; min-width: 0;
-            touch-action: manipulation;
+            justify-content: center; gap: 1px; line-height: 1.1;
+            width: 100%; min-width: 0; touch-action: manipulation;
+            user-select: none; -webkit-user-select: none;
         }
-        .btn-dia .dia-num { font-size: 0.8rem; font-weight: bold; }
-        .btn-dia .dia-total { font-size: 0.55rem; color: #5a3a10; white-space: nowrap; }
+        .btn-dia .dia-num { font-size: 0.72rem; font-weight: bold; }
+        .btn-dia .dia-total { font-size: 0.5rem; color: #5a3a10; white-space: nowrap; }
         .btn-dia.tem-dados .dia-total { color: #a05000; font-weight: bold; }
         .btn-dia.dia-selecionado {
             background: radial-gradient(circle at 30% 20%, #ffe066, #e6a800);
-            box-shadow: 0 3px 0 #7a5200, 0 0 10px 3px rgba(230,167,0,0.5);
+            box-shadow: 0 3px 0 #7a5200, 0 0 8px 2px rgba(230,167,0,0.5);
             color: #3b2a00;
         }
         .btn-dia.dia-editando {
             background: radial-gradient(circle at 30% 20%, #a5d6a5, #6f9e6f);
             box-shadow: 0 3px 0 #3e6b3e;
         }
-        @media (max-width: 480px) {
-            .dias-botoes { gap: 4px; padding: 8px; margin: 12px 8px; width: calc(100% - 16px); }
-            .btn-dia { font-size: 0.65rem; padding: 6px 0; }
-            .btn-dia .dia-num { font-size: 0.65rem; }
-            .btn-dia .dia-total { font-size: 0.55rem; }
-        }
+
+        /* ===== TABELA ===== */
         .table-wrapper {
-            overflow-x: auto; margin: 20px 12px;
-            background: #ddcdac; padding: 8px; border-radius: 24px;
-            max-height: 60vh; -webkit-overflow-scrolling: touch;
+            overflow-x: auto; margin: 0 8px;
+            background: #ddcdac; padding: 6px; border-radius: 18px;
+            max-height: 55vh; -webkit-overflow-scrolling: touch;
         }
-        .planilha { width: 100%; border-collapse: collapse; background: #fff6e8; min-width: 1000px; }
-        .planilha th, .planilha td { border: 1px solid #ebddbb; padding: 8px 4px; text-align: center; }
+        .planilha { width: 100%; border-collapse: collapse; background: #fff6e8; min-width: 900px; }
+        .planilha th, .planilha td { border: 1px solid #ebddbb; padding: 6px 3px; text-align: center; }
         .planilha th {
             background: linear-gradient(to bottom, #b88954, #7e5937);
             color: #fff4e0; position: sticky; top: 0; z-index: 10;
+            font-size: 0.75rem;
         }
         .planilha td:first-child {
             background: #f7efdc; font-weight: bold; text-align: left;
             position: sticky; left: 0; z-index: 5; border-right: 2px solid #dbb87a;
+            font-size: 0.8rem; padding-left: 6px;
         }
         .planilha th:first-child { position: sticky; left: 0; z-index: 15; background: #9c7a50; }
         .planilha th.col-ativa { background: linear-gradient(to bottom, #e6a800, #a07000) !important; }
         .planilha td.col-ativa { background: #fffacc !important; }
-        
+
         .input-hora {
-            width: 70px;
-            padding: 6px;
-            text-align: center;
-            font-family: monospace;
-            background: #f9f2e0;
-            border: 2px solid #c9aa77;
-            border-radius: 16px;
-            transition: all 0.2s;
+            width: 58px; padding: 4px; text-align: center;
+            font-family: monospace; font-size: 0.78rem;
+            background: #f9f2e0; border: 2px solid #c9aa77;
+            border-radius: 12px; transition: all 0.15s;
             touch-action: manipulation;
         }
-        .input-hora::placeholder { color: #aaa; font-style: italic; font-size: 0.7rem; }
-        .input-hora.has-value { background: #fff1b5; border-color: #e4b149; box-shadow: 0 0 6px gold; }
+        .input-hora::placeholder { color: #bbb; font-size: 0.65rem; }
+        .input-hora.has-value { background: #fff1b5; border-color: #e4b149; box-shadow: 0 0 5px gold; }
         .input-hora.streak-day { background: #ffcc99; border-color: #e67300; }
+        .input-hora.editando-longpress {
+            outline: 3px solid #ffaa00;
+            box-shadow: 0 0 0 4px rgba(255,170,0,0.3);
+            background: #fff8e0 !important;
+        }
 
+        /* Status colors via data-status */
         .input-hora[data-status="DM"], .input-hora[data-status="CM"] { background: #ffb366; border-color: #cc5200; color: #662200; font-weight: bold; }
         .input-hora[data-status="VO"], .input-hora[data-status="CQ"], .input-hora[data-status="TN"] { background: #99ccff; border-color: #0066cc; color: #003366; font-weight: bold; }
         .input-hora[data-status="EA"], .input-hora[data-status="TR"] { background: #ffff99; border-color: #cccc00; color: #666600; font-weight: bold; }
@@ -146,106 +177,113 @@
         .input-hora[data-status="SO"] { background: #ffffff; border-color: #999999; color: #333333; font-weight: bold; }
         .input-hora[data-status="default"] { background: #f9f2e0; border-color: #c9aa77; }
 
-        .input-hora.editando-longpress {
-            outline: 3px solid #ffaa00;
-            box-shadow: 0 0 0 4px rgba(255,170,0,0.3);
-            background: #fff8e0;
-        }
-
-        .total-cell { background: #e7dbbc; font-weight: bold; }
+        .total-cell { background: #e7dbbc; font-weight: bold; font-size: 0.8rem; }
         .group-title-row td {
             background: linear-gradient(135deg, #ccaa7a, #b1834d);
-            font-weight: bold; font-size: 1.2rem; text-align: center;
+            font-weight: bold; font-size: 1rem; text-align: center;
+            padding: 6px;
         }
+
+        /* ===== RODAPÉ COMPACTO ===== */
         .info-footer {
-            display: flex; justify-content: space-between; align-items: center;
-            flex-wrap: wrap; margin: 16px 24px; gap: 12px;
-        }
-        .legenda {
-            background: #eedbba; border-radius: 36px; padding: 10px 18px;
-            font-size: 11px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
-        }
-        .legenda-item {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 2px 10px; border-radius: 20px;
+            display: flex; justify-content: flex-end; align-items: center;
+            margin: 6px 12px 0; gap: 8px;
         }
         .status-chip {
-            background: #4c351e; border-radius: 60px; padding: 5px 15px;
-            font-size: 0.7rem; font-weight: bold; color: #ffe1a0;
+            background: #4c351e; border-radius: 60px; padding: 4px 12px;
+            font-size: 0.65rem; font-weight: bold; color: #ffe1a0;
             box-shadow: inset 0 1px 3px #ffdf9a, 0 2px 4px black;
         }
-        .sync-bar { display: flex; justify-content: flex-end; padding: 0 20px 8px; }
-        .sync-status {
-            font-size: 0.7rem; background: #4c351e;
-            padding: 4px 12px; border-radius: 60px; color: #ffe1a0;
-        }
-        .modal-senha, .modal-detalhe {
+
+        /* ===== MODAIS ===== */
+        .modal-senha, .modal-detalhe, .modal-ajuda, .modal-menu-dia {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); backdrop-filter: blur(6px);
+            background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
             display: flex; align-items: center; justify-content: center; z-index: 2000;
         }
-        .card-senha, .card-detalhe {
-            background: #fdf5e6; border-radius: 48px; width: 90%; max-width: 700px;
-            padding: 24px; box-shadow: 0 20px 35px black; max-height: 85vh; overflow-y: auto;
+        .card-senha, .card-detalhe, .card-ajuda {
+            background: #fdf5e6; border-radius: 32px; width: 92%; max-width: 500px;
+            padding: 20px; box-shadow: 0 20px 35px black; max-height: 88vh; overflow-y: auto;
         }
-        .card-senha { text-align: center; max-width: 350px; }
+        .card-senha { text-align: center; max-width: 320px; }
         .card-senha input {
-            width: 100%; padding: 12px; margin: 20px 0; border-radius: 60px;
+            width: 100%; padding: 10px; margin: 16px 0; border-radius: 60px;
             border: 2px solid #b67e45; background: #fff2e0;
             font-size: 1rem; text-align: center;
         }
-        .botoes-senha { display: flex; gap: 15px; justify-content: center; }
+        .botoes-senha { display: flex; gap: 12px; justify-content: center; }
         .btn-modal {
             background: #a07143; color: white; border: none;
-            padding: 8px 22px; border-radius: 60px; cursor: pointer;
-        }
-        .tabela-detalhe {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        .tabela-detalhe th, .tabela-detalhe td {
-            border: 1px solid #ccb28b;
-            padding: 10px 8px;
-            text-align: left;
-        }
-        .tabela-detalhe th {
-            background: #e8d5b0;
-            font-weight: bold;
-            text-align: center;
-        }
-        .progress-bar-wrap {
-            background: #e0cfa8;
-            border-radius: 10px;
-            height: 14px;
-            width: 100%;
-            overflow: hidden;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
-        }
-        .barra-fill {
-            background: linear-gradient(to right, #e67e22, #f39c12);
-            height: 100%;
-            border-radius: 10px;
-            width: 0%;
-            transition: width 0.3s ease;
+            padding: 8px 20px; border-radius: 60px; cursor: pointer;
+            font-size: 0.9rem; touch-action: manipulation;
         }
         .btn-fechar {
             background: #b07842; border: none; padding: 10px 28px;
-            border-radius: 60px; color: white; margin-top: 20px; cursor: pointer;
+            border-radius: 60px; color: white; margin-top: 16px; cursor: pointer;
             display: block; margin-left: auto; margin-right: auto;
+            touch-action: manipulation;
         }
-        .badge-dia-edicao {
-            background: #e6a800; border-radius: 60px; padding: 5px 14px;
-            font-size: 0.75rem; font-weight: bold; color: #3b2a00; display: none;
+
+        /* ===== MENU DIA ===== */
+        .card-menu-dia {
+            background: #fdf5e6; border-radius: 32px; width: 85%; max-width: 300px;
+            padding: 20px; box-shadow: 0 20px 35px black; text-align: center;
         }
-        .badge-dia-edicao.visivel { display: inline-block; }
+        .card-menu-dia h3 { margin: 0 0 16px; color: #3b2a1f; font-size: 1.1rem; }
+        .menu-dia-opcoes { display: flex; flex-direction: column; gap: 10px; }
+        .btn-menu-opcao {
+            background: radial-gradient(circle at 30% 20%, #f3de9f, #cb9e6b);
+            border: none; padding: 12px 20px; border-radius: 60px;
+            font-size: 0.9rem; font-weight: bold; color: #3b2a1f;
+            box-shadow: 0 4px 0 #7a4f2c; cursor: pointer;
+            touch-action: manipulation;
+        }
+        .btn-menu-opcao:active { transform: translateY(2px); box-shadow: 0 2px 0 #7a4f2c; }
+        .btn-menu-cancelar {
+            background: #c0a070; border: none; padding: 10px 20px;
+            border-radius: 60px; font-size: 0.85rem; color: white;
+            margin-top: 4px; cursor: pointer; touch-action: manipulation;
+        }
+
+        /* ===== AJUDA ===== */
+        .card-ajuda { max-width: 360px; }
+        .ajuda-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 0; border-bottom: 1px solid #e0cfa8;
+            font-size: 0.85rem;
+        }
+        .ajuda-cor {
+            width: 36px; height: 24px; border-radius: 8px;
+            flex-shrink: 0; display: flex; align-items: center;
+            justify-content: center; font-size: 0.7rem; font-weight: bold;
+        }
+
+        /* ===== COMPARATIVO GRÁFICO ===== */
+        .grafico-barras { margin-top: 12px; }
+        .grafico-linha {
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 6px;
+        }
+        .grafico-label { font-size: 0.7rem; font-weight: bold; color: #5a3a10; min-width: 24px; text-align: right; }
+        .grafico-barra-wrap { flex: 1; background: #e0cfa8; border-radius: 8px; height: 20px; overflow: hidden; }
+        .grafico-barra-fill {
+            height: 100%; border-radius: 8px;
+            background: linear-gradient(to right, #e67e22, #f39c12);
+            transition: width 0.4s ease;
+            display: flex; align-items: center; justify-content: flex-end;
+            padding-right: 4px;
+        }
+        .grafico-barra-valor { font-size: 0.6rem; font-weight: bold; color: white; white-space: nowrap; }
+        .grafico-barra-fill.zero { background: #ccc; }
+
+        /* ===== TOAST ===== */
         .toast {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            background: #3b2a1f; color: #ffe1a0; padding: 10px 24px;
-            border-radius: 60px; font-size: 0.85rem; font-weight: bold;
+            position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+            background: #3b2a1f; color: #ffe1a0; padding: 8px 20px;
+            border-radius: 60px; font-size: 0.8rem; font-weight: bold;
             box-shadow: 0 4px 12px rgba(0,0,0,0.4); z-index: 9999;
             opacity: 0; transition: opacity 0.3s ease;
-            pointer-events: none; white-space: nowrap;
+            pointer-events: none; white-space: nowrap; max-width: 90vw;
         }
         .toast.show { opacity: 1; }
     </style>
@@ -253,28 +291,39 @@
 <body>
 <div class="skeuo-container">
     <div class="planilha-card">
+
+        <!-- CABEÇALHO COMPACTO -->
         <div class="cabecalho-skeuo">
             <div class="title-area">
                 <h1>✈️ REGISTRO DE HORAS</h1>
                 <input type="text" id="campoMes" class="mes-editavel" value="Junho" disabled>
             </div>
-            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-                <span class="badge-dia-edicao" id="badgeDiaEdicao">✏️ EDITANDO DIA --</span>
-                <div class="badge-senha" id="statusBadge">🔒 SOMENTE LEITURA</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <span class="badge-dia-edicao" id="badgeDiaEdicao">✏️ DIA --</span>
+                <div class="badge-senha" id="statusBadge">🔒 LEITURA</div>
             </div>
         </div>
+
+        <!-- AÇÕES -->
         <div class="top-actions">
             <div class="button-group">
                 <button class="btn-skeuo" id="btnDesbloquear">🔐 DESBLOQUEAR</button>
                 <button class="btn-skeuo" id="btnLimpar" disabled>🧹 LIMPAR</button>
                 <button class="btn-skeuo" id="btnBloquear" disabled>🔒 BLOQUEAR</button>
-                <button class="btn-skeuo" id="btnSairDia" style="display:none">✖ SAIR DO DIA</button>
+                <button class="btn-skeuo" id="btnSairDia" style="display:none">✖ SAIR</button>
             </div>
         </div>
-        <div class="sync-bar">
+
+        <!-- SYNC + AJUDA -->
+        <div class="info-bar">
             <span class="sync-status" id="syncStatus">💾 Sincronizado</span>
+            <button class="btn-ajuda" id="btnAjuda" title="Legenda">?</button>
         </div>
+
+        <!-- BOTÕES DOS DIAS -->
         <div class="dias-botoes" id="botoesDias"></div>
+
+        <!-- TABELA -->
         <div class="table-wrapper">
             <table class="planilha" id="tabelaHoras">
                 <thead id="tableHeader"></thead>
@@ -282,24 +331,17 @@
                 <tfoot id="tfootTotal"></tfoot>
             </table>
         </div>
+
+        <!-- RODAPÉ -->
         <div class="info-footer">
-            <div class="legenda">
-                <span class="legenda-item" style="background:#ffb366;">DM/CM = Laranja</span>
-                <span class="legenda-item" style="background:#99ccff;">VO/CQ/TN = Azul</span>
-                <span class="legenda-item" style="background:#ffff99;">EA/TR = Amarelo</span>
-                <span class="legenda-item" style="background:#90ee90;">FR = Verde</span>
-                <span class="legenda-item" style="background:#ff9999;">FS = Vermelho</span>
-                <span class="legenda-item" style="background:#ccffcc;">FE = Verde Claro</span>
-                <span class="legenda-item" style="background:#ffccff;">RE = Rosa</span>
-                <span class="legenda-item" style="background:#ffffff;">SO = Branco</span>
-                <span><i class="fas fa-edit"></i> Toque no dia → editar coluna | Toque longo → disponíveis</span>
-            </div>
-            <div class="status-chip" id="editModeChip">📖 MODO VISUALIZAÇÃO</div>
+            <div class="status-chip" id="editModeChip">📖 VISUALIZAÇÃO</div>
         </div>
+
     </div>
 </div>
 
 <script>
+// ===== TOAST =====
 function showToast(msg, duracao = 2500) {
     let toast = document.getElementById('toast');
     if (!toast) {
@@ -314,19 +356,17 @@ function showToast(msg, duracao = 2500) {
     toast._timer = setTimeout(() => toast.classList.remove('show'), duracao);
 }
 
-// ======================== MAPEAMENTO DE NOMES PARA EXIBIÇÃO ========================
+// ===== MAPEAMENTO DE NOMES =====
 const DISPLAY_NAME_MAP = {
     "Albert Otto Azevedo": "Otto",
     "Vitor da Costa Bento": "Bento",
     "Vitor Augusto Fernandes": "Vitor Augusto",
-    // Adicione outros mapeamentos se necessário (ex: para distinguir Luiz)
 };
-
 function getDisplayName(fullName) {
     return DISPLAY_NAME_MAP[fullName] || fullName.split(' ')[0];
 }
 
-// ======================== ESCALA MENSAL ========================
+// ===== ESCALA MENSAL =====
 const ESCALA_MENSAL = {
     "Adelio": ["FE","FE","FE","FE","FE","FE","FE","FE","SO","SO","SO","FS","FS","FS","RE","SO","FR","SO","SO","FR","SO","SO","FR","SO","SO","FR","SO","SO","SO","FR"],
     "Otto": ["SO","SO","SO","SO","FS","FS","FS","RE","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","FR","SO","SO","SO","SO","FR","SO"],
@@ -379,19 +419,22 @@ const GRUPOS_PILOTO = {
     "CARAVAN": ["Cleiton","Joao","Pascoal","Lindomar","Perisson","Rui","Yago"],
     "COPILOTO": ["Cauê","Felipe","Ruben","Ernesto","Daniela","Thales","Serafim","Ronaldo","Rodrigo","Tiago"],
 };
-
 function getGrupo(nome) {
     if (GRUPOS_PILOTO["CARAVAN"].includes(nome)) return "CARAVAN";
     if (GRUPOS_PILOTO["COPILOTO"].includes(nome)) return "COPILOTO";
     return "CESSNA 206/210";
 }
 
+const STATUS_BLOQUEADOS = ["DM","CM","EA","FR","FE","TR","TN","CQ"];
+const STATUS_EDITAVEL_LONGPRESS = ["FS","RE"];
+
+function isStatusBloqueado(status) { return STATUS_BLOQUEADOS.includes(status); }
+
 let DIAS = 30;
 let isEditing = false;
 let diaEditandoIndex = null;
 let diaReferencia = null;
 let password = "";
-let longPressTimer = null;
 
 function diasNoMes(mes) {
     const m = mes.toLowerCase();
@@ -399,15 +442,11 @@ function diasNoMes(mes) {
     if (["abril","junho","setembro","novembro"].includes(m)) return 30;
     return 31;
 }
-
 function atualizarDias() {
-    const mesInput = document.getElementById('campoMes');
-    let mes = mesInput.value.trim();
-    if (!mes) mes = "Junho";
+    let mes = document.getElementById('campoMes').value.trim() || "Junho";
     DIAS = diasNoMes(mes);
     return DIAS;
 }
-
 function parseHora(v) {
     if (!v) return 0;
     let n = parseFloat(String(v).trim().replace(',','.'));
@@ -416,16 +455,10 @@ function parseHora(v) {
 function formatarHora(n) { return n.toFixed(1).replace('.',','); }
 
 function getStatusFromValue(value) {
-    const statusMap = {
-        "DM": "DM", "CM": "CM", "VO": "VO", "CQ": "CQ", "TN": "TN",
-        "EA": "EA", "TR": "TR", "FR": "FR", "FS": "FS", "FE": "FE",
-        "RE": "RE", "SO": "SO"
-    };
-    return statusMap[value] || null;
+    const s = ["DM","CM","VO","CQ","TN","EA","TR","FR","FS","FE","RE","SO"];
+    return s.includes(value) ? value : null;
 }
-
 function getNomeFromRow(row) { return row.cells[0].innerText.trim(); }
-function getColIndex(inp) { return Array.from(inp.parentNode.parentNode.children).indexOf(inp.parentNode) - 1; }
 
 function atualizarCorInput(inp) {
     const valor = inp.value.trim();
@@ -433,7 +466,7 @@ function atualizarCorInput(inp) {
     if (status) {
         inp.setAttribute('data-status', status);
         inp.classList.remove('has-value');
-    } else if (valor !== "" && parseHora(valor) > 0) {
+    } else if (valor && parseHora(valor) > 0) {
         inp.setAttribute('data-status', '');
         inp.classList.add('has-value');
     } else {
@@ -444,45 +477,42 @@ function atualizarCorInput(inp) {
 
 function atualizarTotalLinha(row) {
     let soma = 0;
-    row.querySelectorAll('.input-hora').forEach((inp) => {
-        let val = parseHora(inp.value);
-        if (!isNaN(val) && val > 0) soma += val;
+    row.querySelectorAll('.input-hora').forEach(inp => {
+        const v = parseHora(inp.value);
+        if (v > 0) soma += v;
         atualizarCorInput(inp);
     });
-    const totalCell = row.querySelector('.total-cell');
-    if (totalCell) totalCell.textContent = formatarHora(soma);
+    const tc = row.querySelector('.total-cell');
+    if (tc) tc.textContent = formatarHora(soma);
     return soma;
 }
 
 function validarStreaks() {
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const inputs = row.querySelectorAll('.input-hora');
-        const vals = Array.from(inputs).map((inp) => {
-            let val = parseHora(inp.value);
-            return val > 0 ? 1 : 0;
-        });
+        const vals = Array.from(inputs).map(inp => parseHora(inp.value) > 0 ? 1 : 0);
         let streak = 0;
         const seq = new Array(DIAS).fill(false);
         for (let i = 0; i < DIAS; i++) {
-            if (vals[i]) { streak++; if (streak >= 6) for (let j = i-streak+1; j <= i; j++) seq[j] = true; }
+            if (vals[i]) { streak++; if (streak >= 6) for (let j = i-streak+1; j<=i; j++) seq[j]=true; }
             else streak = 0;
         }
         inputs.forEach((inp, i) => inp.classList.toggle('streak-day', seq[i]));
-        const nomeCell = row.querySelector('td:first-child');
-        const icon = nomeCell.querySelector('.alert-icon');
-        if (seq.some(v => v)) {
-            if (!icon) { const ic = document.createElement('i'); ic.className = 'fas fa-exclamation-triangle alert-icon'; ic.title = '6+ dias consecutivos'; nomeCell.appendChild(ic); }
-        } else if (icon) icon.remove();
+        const nc = row.querySelector('td:first-child');
+        const ic = nc.querySelector('.alert-icon');
+        if (seq.some(v=>v)) {
+            if (!ic) { const e=document.createElement('i'); e.className='fas fa-exclamation-triangle alert-icon'; e.title='6+ dias consecutivos'; nc.appendChild(e); }
+        } else if (ic) ic.remove();
     });
 }
 
 function recalcularTudo() {
-    let somaGeral = 0;
-    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => somaGeral += atualizarTotalLinha(row));
+    let soma = 0;
+    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => soma += atualizarTotalLinha(row));
     const tfoot = document.getElementById('tfootTotal');
     tfoot.innerHTML = '';
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td style="font-weight:bold">🏁 TOTAL GERAL<\/td>${'<td><\/td>'.repeat(DIAS)}<td class="total-geral">${formatarHora(somaGeral)}<\/td>`;
+    tr.innerHTML = `<td style="font-weight:bold">🏁 TOTAL GERAL</td>${'<td></td>'.repeat(DIAS)}<td class="total-geral">${formatarHora(soma)}</td>`;
     tfoot.appendChild(tr);
     validarStreaks();
     atualizarTotaisBotoesDias();
@@ -492,10 +522,7 @@ function totalHorasDia(diaIndex) {
     let soma = 0;
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const inp = row.cells[diaIndex+1]?.querySelector('.input-hora');
-        if (inp) {
-            let val = parseHora(inp.value);
-            if (!isNaN(val) && val > 0) soma += val;
-        }
+        if (inp) { const v=parseHora(inp.value); if(v>0) soma+=v; }
     });
     return soma;
 }
@@ -503,14 +530,24 @@ function totalHorasDia(diaIndex) {
 function atualizarTotaisBotoesDias() {
     document.querySelectorAll('.btn-dia').forEach((btn, i) => {
         const total = totalHorasDia(i);
-        const labelEl = btn.querySelector('.dia-total');
-        if (labelEl) labelEl.textContent = total > 0 ? formatarHora(total)+'h' : '';
+        const el = btn.querySelector('.dia-total');
+        if (el) el.textContent = total > 0 ? formatarHora(total)+'h' : '';
         btn.classList.toggle('tem-dados', total > 0);
     });
 }
 
 function sairEdicaoDia() {
     if (diaEditandoIndex !== null) {
+        // Restaura SO nos campos sem valor
+        document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
+            const nome = getNomeFromRow(row);
+            const status = ESCALA_MENSAL[nome]?.[diaEditandoIndex] || "";
+            const inp = row.cells[diaEditandoIndex+1]?.querySelector('.input-hora');
+            if (inp && status === "SO" && parseHora(inp.value) === 0) {
+                inp.value = "";
+                inp.setAttribute('data-status', 'default');
+            }
+        });
         diaEditandoIndex = null;
         document.getElementById('badgeDiaEdicao').classList.remove('visivel');
         document.getElementById('btnSairDia').style.display = 'none';
@@ -524,139 +561,142 @@ function sairEdicaoDia() {
 function ativarEdicaoDia(diaIndex) {
     if (diaEditandoIndex !== null && diaEditandoIndex !== diaIndex) sairEdicaoDia();
     diaEditandoIndex = diaIndex;
-    
+
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const nome = getNomeFromRow(row);
         const status = ESCALA_MENSAL[nome]?.[diaIndex] || "";
-        const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
-        if (inp) {
-            if (status === "SO") {
-                inp.disabled = false;
-                inp.value = "";
-                inp.placeholder = "0,0";
-                inp.classList.remove("status-so");
-                inp.removeAttribute('data-status');
-            } else if (!isStatusBloqueado(status)) {
-                inp.disabled = false;
-                inp.placeholder = "0,0";
-                if (inp.value === "SO") inp.value = "";
-            } else {
-                inp.disabled = true;
-            }
+        const inp = row.cells[diaIndex+1]?.querySelector('.input-hora');
+        if (!inp) return;
+
+        if (status === "SO") {
+            // SO: esvazia e habilita
+            inp.disabled = false;
+            inp.value = "";
+            inp.placeholder = "0,0";
+            inp.removeAttribute('data-status');
+            inp.classList.remove('has-value');
+        } else if (isStatusBloqueado(status)) {
+            // Bloqueados (FR, FE, DM, etc): mantém disabled
+            inp.disabled = true;
+        } else if (STATUS_EDITAVEL_LONGPRESS.includes(status)) {
+            // FS, RE: editável apenas via long press
+            inp.disabled = true;
+        } else {
+            // VO, CQ, TN: editável normalmente
+            inp.disabled = false;
+            inp.placeholder = "0,0";
         }
     });
-    
+
     destacarColuna(diaIndex);
     const th = document.querySelector(`#tableHeader th:nth-child(${diaIndex+2})`);
     if (th) th.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
     const diaNum = String(diaIndex+1).padStart(2,'0');
-    document.getElementById('badgeDiaEdicao').textContent = `✏️ EDITANDO DIA ${diaNum}`;
+    document.getElementById('badgeDiaEdicao').textContent = `✏️ DIA ${diaNum}`;
     document.getElementById('badgeDiaEdicao').classList.add('visivel');
     document.getElementById('btnSairDia').style.display = 'inline-block';
     document.querySelectorAll('.btn-dia').forEach((btn,i) => btn.classList.toggle('dia-editando', i===diaIndex));
-    showToast(`✏️ Dia ${diaNum} liberado para edição`);
+    showToast(`✏️ Dia ${diaNum} — SO liberados | Long press em FS/RE para editar`);
 }
 
 function destacarColuna(diaIndex) {
     limparDestaqueColuna();
-    const colIdx = diaIndex+1;
-    document.querySelectorAll('#tableHeader tr th')[colIdx]?.classList.add('col-ativa');
+    const ci = diaIndex+1;
+    document.querySelectorAll('#tableHeader tr th')[ci]?.classList.add('col-ativa');
     document.querySelectorAll('#tabelaHoras tbody tr').forEach(row => {
-        if (row.cells[colIdx]) row.cells[colIdx].classList.add('col-ativa');
+        if (row.cells[ci]) row.cells[ci].classList.add('col-ativa');
     });
 }
-
 function limparDestaqueColuna() {
     document.querySelectorAll('.col-ativa').forEach(el => el.classList.remove('col-ativa'));
 }
 
+// ===== LONG PRESS EM FS/RE =====
 function habilitarEdicaoStatus(inp, row, diaIndex) {
     const nome = getNomeFromRow(row);
     const statusAtual = ESCALA_MENSAL[nome]?.[diaIndex] || "";
-    if (!statusAtual || statusAtual === "SO") {
-        showToast("⚠️ Apenas células com status (FR, FS, etc.) podem ser editadas.");
-        return;
-    }
+    if (!STATUS_EDITAVEL_LONGPRESS.includes(statusAtual)) return;
+
     inp.disabled = false;
     inp.classList.add('editando-longpress');
-    inp.focus();
     inp.select();
-    inp.onkeydown = async function(e) {
+    showToast(`✏️ Editando ${statusAtual} — digite novo status e pressione Enter`);
+
+    const onKeyDown = async (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            const novoValor = this.value.trim().toUpperCase();
-            if (novoValor && (getStatusFromValue(novoValor) || novoValor === "SO")) {
+            const novoValor = inp.value.trim().toUpperCase();
+            if (novoValor && getStatusFromValue(novoValor)) {
+                inp.classList.remove('editando-longpress');
+                inp.disabled = true;
                 ESCALA_MENSAL[nome][diaIndex] = novoValor;
-                this.classList.remove('editando-longpress');
-                this.disabled = true;
-                atualizarCorInput(this);
+                atualizarCorInput(inp);
                 await salvarStatusNoBackend(nome, diaIndex, novoValor);
-                showToast(`✅ Status alterado para ${novoValor}`);
+                showToast(`✅ Status → ${novoValor}`);
                 recalcularTudo();
             } else {
-                showToast('❌ Status inválido. Use SO, FR, FS, FE, DM, etc.');
+                showToast('❌ Status inválido. Use SO, FR, FS, FE, DM, RE, VO...');
             }
-            this.onkeydown = null;
+            inp.removeEventListener('keydown', onKeyDown);
+            inp.removeEventListener('blur', onBlur);
         }
     };
-    inp.onblur = function() {
-        this.classList.remove('editando-longpress');
-        this.disabled = true;
-        this.value = statusAtual;
-        this.onkeydown = null;
-        this.onblur = null;
-        showToast('Edição cancelada');
+    const onBlur = () => {
+        inp.classList.remove('editando-longpress');
+        inp.disabled = true;
+        inp.value = statusAtual;
+        atualizarCorInput(inp);
+        inp.removeEventListener('keydown', onKeyDown);
+        inp.removeEventListener('blur', onBlur);
     };
+    inp.addEventListener('keydown', onKeyDown);
+    inp.addEventListener('blur', onBlur);
 }
 
 async function salvarStatusNoBackend(nome, dia, novoStatus) {
     try {
-        const res = await fetch('/api/update_status', {
+        await fetch('/api/update_status', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ pilot: nome, day: dia, status: novoStatus })
         });
-        if (!res.ok) throw new Error('Falha ao salvar status');
-    } catch(e) {
-        console.error('Erro ao salvar status:', e);
-        showToast('❌ Erro ao salvar status no servidor');
-    }
+    } catch(e) { showToast('❌ Erro ao salvar status'); }
 }
 
+// ===== COMPARATIVO — GRÁFICO DE BARRAS MENSAL =====
 function mostrarComparativoDia(diaIndex) {
     const diaNumero = diaIndex + 1;
-    const dadosDia = {};
-    let maxHoras = 0;
-    
-    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-        const nome = getNomeFromRow(row);
-        const inp = row.cells[diaIndex + 1]?.querySelector('.input-hora');
-        let horas = 0;
-        if (inp) horas = parseHora(inp.value);
-        dadosDia[nome] = horas;
-        if (horas > maxHoras) maxHoras = horas;
+
+    // Coleta total por dia no mês inteiro
+    const totaisPorDia = [];
+    for (let d = 0; d < DIAS; d++) {
+        totaisPorDia.push({ dia: d+1, total: totalHorasDia(d) });
+    }
+    const maxTotal = Math.max(...totaisPorDia.map(d => d.total), 0.1);
+
+    let html = `<div class="card-detalhe">
+        <h2 style="text-align:center;margin-bottom:4px;">📊 Horas por Dia — Junho</h2>
+        <p style="text-align:center;font-size:0.8rem;color:#7a5000;margin-bottom:12px;">Dia selecionado: <strong>${String(diaNumero).padStart(2,'0')}</strong></p>
+        <div class="grafico-barras">`;
+
+    totaisPorDia.forEach(({ dia, total }) => {
+        const pct = maxTotal > 0 ? (total / maxTotal) * 100 : 0;
+        const ativo = dia === diaNumero;
+        const corBarra = ativo
+            ? 'background: linear-gradient(to right, #e6a800, #ffcc00);'
+            : total === 0 ? 'background: #ccc;' : '';
+        html += `<div class="grafico-linha">
+            <span class="grafico-label" style="${ativo ? 'color:#b07000;font-weight:900;' : ''}">${String(dia).padStart(2,'0')}</span>
+            <div class="grafico-barra-wrap">
+                <div class="grafico-barra-fill ${total===0?'zero':''}" style="width:${pct}%;${corBarra}">
+                    ${total > 0 ? `<span class="grafico-barra-valor">${formatarHora(total)}h</span>` : ''}
+                </div>
+            </div>
+        </div>`;
     });
-    
-    const pilotosOrdenados = Object.keys(dadosDia).sort((a,b) => dadosDia[b] - dadosDia[a]);
-    
-    let html = `<div class="card-detalhe"><h2 style="text-align:center; margin-bottom:20px;">📅 Dia ${String(diaNumero).padStart(2, '0')}</h2>`;
-    html += `<div style="overflow-x: auto;"><table class="tabela-detalhe" style="width: 100%;">`;
-    html += `<thead><tr><th style="text-align: left;">Piloto</th><th style="text-align: center; width: 80px;">Horas</th><th style="text-align: center;">Progresso</th></thead><tbody>`;
-    
-    pilotosOrdenados.forEach(nome => {
-        const horas = dadosDia[nome] || 0;
-        const perc = maxHoras > 0 ? (horas / maxHoras) * 100 : 0;
-        const horasDisplay = horas === 0 ? '—' : formatarHora(horas);
-        html += `<tr>
-            <td style="text-align: left; font-weight: 500;">${nome}</td>
-            <td style="text-align: center; font-weight: bold;">${horasDisplay}</td>
-            <td style="min-width: 120px;"><div class="progress-bar-wrap"><div class="barra-fill" style="width: ${perc}%;"></div></div></td>
-        </tr>`;
-    });
-    
-    html += `</tbody></table></div>`;
-    html += `<button class="btn-fechar" id="fecharDetalhe">Fechar</button></div>`;
-    
+
+    html += `</div><button class="btn-fechar" id="fecharDetalhe">Fechar</button></div>`;
+
     const modal = document.createElement('div');
     modal.className = 'modal-detalhe';
     modal.innerHTML = html;
@@ -665,30 +705,29 @@ function mostrarComparativoDia(diaIndex) {
     modal.onclick = e => { if (e.target === modal) modal.remove(); };
 }
 
-// ===== LISTA DE DISPONÍVEIS (COM MAPEAMENTO DE NOMES) =====
+// ===== DISPONÍVEIS =====
 async function mostrarDisponiveis(diaRef) {
     if (diaRef === null) { showToast("⚠️ Selecione um dia primeiro."); return; }
-    let diaSeguinte = diaRef + 1;
+    const diaSeguinte = diaRef + 1;
     if (diaSeguinte >= DIAS) { showToast("⚠️ Último dia do mês."); return; }
     try {
         const res = await fetch(`/api/available_commanders/${diaSeguinte}`);
         const data = await res.json();
-        let html = `<div class="card-detalhe"><h2 style="text-align:center;">👥 Cmtes Disponíveis - Dia ${String(diaSeguinte+1).padStart(2,'00')}</h2>`;
+        let html = `<div class="card-detalhe"><h2 style="text-align:center;">👥 Disponíveis — Dia ${String(diaSeguinte+1).padStart(2,'00')}</h2>`;
         for (let grupo in data) {
-            html += `<h3 style="margin-top: 15px;">${grupo}</h3>`;
+            html += `<h3 style="margin-top:14px;color:#7a4a1e;">${grupo}</h3>`;
             if (data[grupo].length > 0) {
-                html += `<ul style="margin: 5px 0 15px 20px; list-style: none; padding-left: 0;">`;
+                html += `<ul style="margin:4px 0 12px 0;padding-left:0;list-style:none;">`;
                 data[grupo].forEach(c => {
-                    const horas = c.horas_totais || 0;
-                    const displayName = getDisplayName(c.name);
-                    html += `<li style="padding: 4px 0; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <span>${displayName} (${c.status})</span>
-                        <strong>${horas.toFixed(1)}h</strong>
+                    const nome = getDisplayName(c.name);
+                    html += `<li style="padding:5px 0;display:flex;justify-content:space-between;border-bottom:1px solid #e8d5b0;">
+                        <span>${nome} <span style="color:#888;font-size:0.8rem;">(${c.status})</span></span>
+                        <strong>${c.horas_totais.toFixed(1)}h</strong>
                     </li>`;
                 });
                 html += `</ul>`;
             } else {
-                html += `<p>Nenhum piloto disponível.</p>`;
+                html += `<p style="color:#aaa;font-size:0.85rem;">Nenhum disponível.</p>`;
             }
         }
         html += `<button class="btn-fechar" id="fecharDisponiveis">Fechar</button></div>`;
@@ -701,12 +740,39 @@ async function mostrarDisponiveis(diaRef) {
     } catch(e) { showToast("❌ Erro ao carregar disponíveis."); }
 }
 
+// ===== MENU AO TOCAR NO DIA =====
+function mostrarMenuDia(diaIndex, btn) {
+    selecionarDia(diaIndex, btn);
+    const diaNum = String(diaIndex+1).padStart(2,'0');
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-menu-dia';
+    modal.innerHTML = `
+        <div class="card-menu-dia">
+            <h3>📅 Dia ${diaNum}</h3>
+            <div class="menu-dia-opcoes">
+                ${isEditing ? `<button class="btn-menu-opcao" id="menuEditar">✏️ Editar horas</button>` : ''}
+                <button class="btn-menu-opcao" id="menuComparativo">📊 Gráfico mensal</button>
+                <button class="btn-menu-opcao" id="menuDisponiveis">👥 Disponíveis dia ${String(diaIndex+2).padStart(2,'0')}</button>
+                <button class="btn-menu-cancelar" id="menuCancelar">Cancelar</button>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+
+    if (isEditing) modal.querySelector('#menuEditar').onclick = () => { modal.remove(); ativarEdicaoDia(diaIndex); };
+    modal.querySelector('#menuComparativo').onclick = () => { modal.remove(); mostrarComparativoDia(diaIndex); };
+    modal.querySelector('#menuDisponiveis').onclick = () => { modal.remove(); mostrarDisponiveis(diaIndex); };
+    modal.querySelector('#menuCancelar').onclick = () => modal.remove();
+    modal.onclick = e => { if (e.target === modal) modal.remove(); };
+}
+
+// ===== CARREGAMENTO =====
 async function carregarDoBackend() {
     const syncSpan = document.getElementById('syncStatus');
     syncSpan.innerHTML = '⏳ Carregando...';
     try {
         const res = await fetch('/api/data');
-        if (!res.ok) throw new Error('Falha na requisição');
+        if (!res.ok) throw new Error('Falha');
         const data = await res.json();
         const pilots = data.pilots;
         const logs = data.logs;
@@ -714,7 +780,7 @@ async function carregarDoBackend() {
         atualizarDias();
 
         const thead = document.getElementById('tableHeader');
-        thead.innerHTML = `<tr><th>👤 PILOTO</th>${Array.from({length:DIAS},(_,i)=>`<th>${String(i+1).padStart(2,'00')}</th>`).join('')}<th>⭐ TOTAL</th>`;
+        thead.innerHTML = `<tr><th>👤 PILOTO</th>${Array.from({length:DIAS},(_,i)=>`<th>${String(i+1).padStart(2,'00')}</th>`).join('')}<th>⭐ TOTAL</th></tr>`;
 
         const tbody = document.getElementById('planilhaBody');
         tbody.innerHTML = '';
@@ -725,7 +791,7 @@ async function carregarDoBackend() {
         for (let grupo of ["CESSNA 206/210","CARAVAN","COPILOTO"]) {
             const titleRow = document.createElement('tr');
             titleRow.classList.add('group-title-row');
-            titleRow.innerHTML = `<td colspan="${DIAS+2}"><i class="fas fa-${grupo==="COPILOTO"?"headset":"plane"}"></i> ${grupo}<\/td>`;
+            titleRow.innerHTML = `<td colspan="${DIAS+2}"><i class="fas fa-${grupo==="COPILOTO"?"headset":"plane"}"></i> ${grupo}</td>`;
             tbody.appendChild(titleRow);
 
             for (let p of grupos[grupo]) {
@@ -746,53 +812,54 @@ async function carregarDoBackend() {
 
                     const valor = logs[p.name]?.[i+1] || 0;
                     const statusOriginal = ESCALA_MENSAL[p.name]?.[i] || "";
+
                     if (valor > 0) {
                         inp.value = formatarHora(valor);
                         total += valor;
                     } else if (statusOriginal && statusOriginal !== "SO") {
                         inp.value = statusOriginal;
-                        inp.setAttribute('data-status', statusOriginal);
-                        inp.classList.add(getStatusClass(statusOriginal));
                     } else {
                         inp.value = "";
                     }
-                    
+
                     atualizarCorInput(inp);
                     inp.disabled = true;
 
-                    let longPressTimer = null;
-                    inp.addEventListener('touchstart', (e) => {
-                        longPressTimer = setTimeout(() => {
-                            if (isEditing) {
+                    // Long press em FS/RE
+                    let lpTimer = null;
+                    inp.addEventListener('touchstart', () => {
+                        lpTimer = setTimeout(() => {
+                            if (isEditing && diaEditandoIndex === i) {
                                 habilitarEdicaoStatus(inp, row, i);
                             }
-                        }, 500);
+                        }, 600);
                     });
-                    inp.addEventListener('touchend', () => { clearTimeout(longPressTimer); });
-                    inp.addEventListener('touchcancel', () => { clearTimeout(longPressTimer); });
+                    inp.addEventListener('touchend', () => clearTimeout(lpTimer));
+                    inp.addEventListener('touchcancel', () => clearTimeout(lpTimer));
 
                     inp.addEventListener('input', function() {
-                        if (diaEditandoIndex !== null && (diaEditandoIndex === i) && isEditing) {
+                        if (diaEditandoIndex === i && isEditing && !this.disabled) {
                             atualizarTotalLinha(row);
                             recalcularTudo();
-                            if (isEditing && password) salvarNoBackend();
+                            if (password) salvarNoBackend();
                         }
                     });
                     inp.addEventListener('blur', function() {
-                        if (diaEditandoIndex !== null && (diaEditandoIndex === i) && isEditing) {
-                            let v = parseHora(this.value);
-                            if (v > 0) {
-                                this.value = formatarHora(v);
-                            }
+                        if (diaEditandoIndex === i && isEditing && !this.disabled) {
+                            const v = parseHora(this.value);
+                            if (v > 0) this.value = formatarHora(v);
+                            else this.value = "";
                             atualizarCorInput(this);
                             atualizarTotalLinha(row);
                             recalcularTudo();
-                            if (isEditing && password) salvarNoBackend();
+                            if (password) salvarNoBackend();
                         }
                     });
+
                     td.appendChild(inp);
                     row.appendChild(td);
                 }
+
                 const totalCell = document.createElement('td');
                 totalCell.classList.add('total-cell');
                 totalCell.textContent = formatarHora(total);
@@ -807,7 +874,7 @@ async function carregarDoBackend() {
         setTimeout(() => syncSpan.innerHTML = '💾 Sincronizado', 2000);
     } catch(e) {
         console.error(e);
-        syncSpan.innerHTML = '❌ Erro ao carregar';
+        document.getElementById('syncStatus').innerHTML = '❌ Erro ao carregar';
     }
 }
 
@@ -816,14 +883,13 @@ async function salvarNoBackend() {
     const syncSpan = document.getElementById('syncStatus');
     syncSpan.innerHTML = '⏳ Salvando...';
     const logs = {};
-
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const nome = getNomeFromRow(row);
         logs[nome] = {};
         row.querySelectorAll('.input-hora').forEach((inp, i) => {
             if (!inp.disabled) {
-                const val = parseHora(inp.value);
-                if (val > 0) logs[nome][i+1] = val;
+                const v = parseHora(inp.value);
+                if (v > 0) logs[nome][i+1] = v;
             }
         });
     });
@@ -840,6 +906,7 @@ async function salvarNoBackend() {
     }
 }
 
+// ===== BOTÕES DOS DIAS =====
 function criarBotoesDias() {
     const container = document.getElementById('botoesDias');
     container.innerHTML = '';
@@ -848,19 +915,25 @@ function criarBotoesDias() {
         btn.classList.add('btn-dia');
         btn.setAttribute('data-dia', i);
         btn.innerHTML = `<span class="dia-num">${String(i+1).padStart(2,'00')}</span><span class="dia-total"></span>`;
-        let touchTimer = null, isLongPress = false;
+
+        let touched = false;
         btn.addEventListener('touchstart', (e) => {
-            e.preventDefault(); isLongPress = false;
-            touchTimer = setTimeout(() => { isLongPress=true; selecionarDia(i,btn); mostrarDisponiveis(i); }, 500);
-        });
+            e.preventDefault();
+            touched = true;
+        }, { passive: false });
+
         btn.addEventListener('touchend', (e) => {
             e.preventDefault();
-            if (touchTimer) clearTimeout(touchTimer);
-            if (!isLongPress) { selecionarDia(i,btn); if(isEditing) ativarEdicaoDia(i); else mostrarComparativoDia(i); }
+            if (touched) {
+                touched = false;
+                mostrarMenuDia(i, btn);
+            }
         });
-        btn.addEventListener('touchcancel', () => { if (touchTimer) clearTimeout(touchTimer); });
-        btn.onclick = () => { selecionarDia(i,btn); if(isEditing) ativarEdicaoDia(i); else mostrarComparativoDia(i); };
-        btn.oncontextmenu = (e) => { e.preventDefault(); selecionarDia(i,btn); mostrarDisponiveis(i); return false; };
+
+        btn.addEventListener('touchcancel', () => { touched = false; });
+
+        btn.onclick = () => mostrarMenuDia(i, btn);
+
         container.appendChild(btn);
     }
     atualizarTotaisBotoesDias();
@@ -872,6 +945,7 @@ function selecionarDia(i, btn) {
     diaReferencia = i;
 }
 
+// ===== MODAL SENHA =====
 function exibirModalSenha() {
     return new Promise((resolve) => {
         const modalDiv = document.createElement('div');
@@ -893,33 +967,70 @@ function exibirModalSenha() {
         modalDiv.querySelector('#confirmarSenha').onclick = confirmar;
         modalDiv.querySelector('#cancelarSenha').onclick = cancelar;
         inputSenha.focus();
-        inputSenha.addEventListener('keypress', (e) => { if(e.key==='Enter') confirmar(); });
+        inputSenha.addEventListener('keypress', e => { if(e.key==='Enter') confirmar(); });
     });
 }
 
+// ===== MODAL AJUDA =====
+function mostrarAjuda() {
+    const itens = [
+        { cor: '#ffb366', texto: 'DM / CM — Dispensa Médica / Revalidação' },
+        { cor: '#99ccff', texto: 'VO / CQ / TN — Em Voo / Voo Cheque / Trein. Voo' },
+        { cor: '#ffff99', texto: 'EA / TR — Exp. Administrativo / Trein. Solo' },
+        { cor: '#90ee90', texto: 'FR — Folga Regulamentar' },
+        { cor: '#ff9999', texto: 'FS — Folga Social (long press para editar)' },
+        { cor: '#ccffcc', texto: 'FE — Férias' },
+        { cor: '#ffccff', texto: 'RE — Reserva na Empresa' },
+        { cor: '#ffffff', texto: 'SO — Sobreaviso (editável ao selecionar dia)' },
+    ];
+    let html = `<div class="card-ajuda">
+        <h3 style="text-align:center;margin-bottom:12px;">📖 Legenda</h3>`;
+    itens.forEach(item => {
+        html += `<div class="ajuda-item">
+            <div class="ajuda-cor" style="background:${item.cor};border:1px solid #ccc;">${item.texto.split('—')[0].trim()}</div>
+            <span>${item.texto.split('—')[1]?.trim() || ''}</span>
+        </div>`;
+    });
+    html += `<hr style="margin:12px 0;border-color:#e0cfa8;">
+        <p style="font-size:0.8rem;color:#7a5000;text-align:center;">
+            <strong>Toque no dia</strong> → menu de opções<br>
+            <strong>Long press em FS/RE</strong> → editar status<br>
+            <strong>Sobreaviso (SO)</strong> → campo fica vazio para digitar horas
+        </p>
+        <button class="btn-fechar" id="fecharAjuda">Fechar</button>
+    </div>`;
+    const modal = document.createElement('div');
+    modal.className = 'modal-ajuda';
+    modal.innerHTML = html;
+    document.body.appendChild(modal);
+    modal.querySelector('#fecharAjuda').onclick = () => modal.remove();
+    modal.onclick = e => { if (e.target === modal) modal.remove(); };
+}
+
+// ===== LOGIN / LOGOUT =====
 async function login() {
     if (isEditing) { showToast("⚠️ Já está editando."); return; }
     const senha = await exibirModalSenha();
     if (senha === "Emerson" || senha === "Bispo") {
         password = senha;
         isEditing = true;
-        document.getElementById('statusBadge').innerHTML = '🔓 EDIÇÃO ATIVA';
+        document.getElementById('statusBadge').innerHTML = '🔓 EDIÇÃO';
         document.getElementById('editModeChip').innerHTML = '✏️ EDIÇÃO ATIVO';
         document.getElementById('btnLimpar').disabled = false;
         document.getElementById('btnBloquear').disabled = false;
-        showToast("✅ Edição ativada! Toque num dia para editar a coluna.");
+        showToast("✅ Edição ativada! Toque num dia → Editar horas.");
     } else if (senha !== null) {
         showToast("❌ Senha incorreta.");
     }
 }
 
 function bloquear() {
-    if (!isEditing) { showToast("ℹ️ Já está em modo leitura."); return; }
+    if (!isEditing) { showToast("ℹ️ Já está em leitura."); return; }
     isEditing = false;
     password = "";
     sairEdicaoDia();
-    document.getElementById('statusBadge').innerHTML = '🔒 SOMENTE LEITURA';
-    document.getElementById('editModeChip').innerHTML = '📖 MODO VISUALIZAÇÃO';
+    document.getElementById('statusBadge').innerHTML = '🔒 LEITURA';
+    document.getElementById('editModeChip').innerHTML = '📖 VISUALIZAÇÃO';
     document.getElementById('btnLimpar').disabled = true;
     document.getElementById('btnBloquear').disabled = true;
     showToast("🔒 Modo leitura ativado.");
@@ -927,9 +1038,10 @@ function bloquear() {
 
 function limpar() {
     if (!isEditing) return showToast("⚠️ Desbloqueie primeiro.");
-    if (confirm("Limpar todos os valores?")) {
+    if (confirm("Limpar todos os valores de horas?")) {
         document.querySelectorAll('.input-hora').forEach(inp => {
-            inp.value = '';
+            const v = inp.getAttribute('data-status');
+            if (!v || v === 'default') inp.value = '';
         });
         recalcularTudo();
         salvarNoBackend();
@@ -937,23 +1049,12 @@ function limpar() {
     }
 }
 
-function getStatusClass(status) {
-    const map = {
-        "DM":"status-dm","CM":"status-cm","VO":"status-vo","EA":"status-ea",
-        "FR":"status-fr","FS":"status-fs","FE":"status-fe","RE":"status-re",
-        "SO":"status-so","TR":"status-tr","TN":"status-tn","CQ":"status-cq"
-    };
-    return map[status] || "";
-}
-
-function isStatusBloqueado(status) {
-    return ["DM","CM","EA","FR","FS","FE","TR","TN","CQ","RE"].includes(status);
-}
-
+// ===== EVENTOS =====
 document.getElementById('btnDesbloquear').onclick = login;
 document.getElementById('btnBloquear').onclick = bloquear;
 document.getElementById('btnLimpar').onclick = limpar;
 document.getElementById('btnSairDia').onclick = sairEdicaoDia;
+document.getElementById('btnAjuda').onclick = mostrarAjuda;
 
 carregarDoBackend();
 </script>
