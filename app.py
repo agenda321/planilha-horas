@@ -112,10 +112,11 @@ def login():
         return jsonify({"success": True})
     return jsonify({"success": False}), 401
 
-# API de dados
+# API de dados (GET com parâmetros month/year)
 @app.route("/api/data", methods=["GET"])
 def get_data():
-    month, year = datetime.now().month, datetime.now().year
+    month = request.args.get("month", default=datetime.now().month, type=int)
+    year = request.args.get("year", default=datetime.now().year, type=int)
     pilots = Pilot.query.all()
     logs = FlightLog.query.filter_by(month=month, year=year).all()
     result = {
@@ -128,12 +129,14 @@ def get_data():
         result["logs"][log.pilot.name][log.day] = log.hours
     return jsonify(result)
 
+# API de salvamento (POST com month/year no corpo)
 @app.route("/api/data", methods=["POST"])
 def save_data():
     data = request.get_json()
     if data.get("password") not in [EDIT_PASSWORD, EDIT_PASSWORD_2]:
         return jsonify({"success": False}), 401
-    month, year = datetime.now().month, datetime.now().year
+    month = data.get("month", datetime.now().month)
+    year = data.get("year", datetime.now().year)
     for pilot_name, days in data.get("logs", {}).items():
         pilot = Pilot.query.filter_by(name=pilot_name).first()
         if not pilot:
@@ -194,7 +197,8 @@ def update_status():
     pilot_name = data.get("pilot")
     day = data.get("day")
     new_status = data.get("status")
-    month, year = datetime.now().month, datetime.now().year
+    month = data.get("month", datetime.now().month)
+    year = data.get("year", datetime.now().year)
     if not pilot_name or day is None or not new_status:
         return jsonify({"success": False, "erro": "Dados incompletos"}), 400
     pilot = Pilot.query.filter_by(name=pilot_name).first()
