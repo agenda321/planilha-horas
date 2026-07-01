@@ -1,4 +1,4 @@
-# escala.py - Dados da escala mensal (30 dias) - ATUALIZADO
+# escala.py - Dados da escala mensal (30 dias) - JULHO 2026
 # Códigos: VO (vazio/disponível), CQ, RE, SO (disponíveis)
 # Indisponíveis: DM, CM, EA, FR, FS, FE, TR, TN
 
