@@ -258,23 +258,36 @@
             justify-content: center; font-size: 0.7rem; font-weight: bold;
         }
 
-        /* ===== COMPARATIVO GRÁFICO ===== */
-        .grafico-barras { margin-top: 12px; }
-        .grafico-linha {
-            display: flex; align-items: center; gap: 8px;
-            margin-bottom: 6px;
+        /* ===== COMPARATIVO TABELA ===== */
+        .tabela-detalhe {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
         }
-        .grafico-label { font-size: 0.7rem; font-weight: bold; color: #5a3a10; min-width: 24px; text-align: right; }
-        .grafico-barra-wrap { flex: 1; background: #e0cfa8; border-radius: 8px; height: 20px; overflow: hidden; }
-        .grafico-barra-fill {
-            height: 100%; border-radius: 8px;
-            background: linear-gradient(to right, #e67e22, #f39c12);
-            transition: width 0.4s ease;
-            display: flex; align-items: center; justify-content: flex-end;
-            padding-right: 4px;
+        .tabela-detalhe th, .tabela-detalhe td {
+            border: 1px solid #ccb28b;
+            padding: 8px;
+            text-align: left;
         }
-        .grafico-barra-valor { font-size: 0.6rem; font-weight: bold; color: white; white-space: nowrap; }
-        .grafico-barra-fill.zero { background: #ccc; }
+        .tabela-detalhe th {
+            background: #e8d5b0;
+            font-weight: bold;
+            text-align: center;
+        }
+        .progress-bar-wrap {
+            background: #e0cfa8;
+            border-radius: 10px;
+            height: 12px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .barra-fill {
+            background: #e67e22;
+            height: 100%;
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
 
         /* ===== TOAST ===== */
         .toast {
@@ -372,6 +385,7 @@ const DISPLAY_NAME_MAP = {
     "Albert Otto Azevedo": "Otto",
     "Vitor da Costa Bento": "Bento",
     "Vitor Augusto Fernandes": "Vitor Augusto",
+    "Andrade": "Andrade",
 };
 function getDisplayName(fullName) {
     return DISPLAY_NAME_MAP[fullName] || fullName.split(' ')[0];
@@ -379,9 +393,6 @@ function getDisplayName(fullName) {
 
 // ===== ESCALA MENSAL – JULHO 2026 =====
 const ESCALA_MENSAL = {
-    // =========================================================
-    // CESSNA 206/210 — PILOTOS EM COMANDO
-    // =========================================================
     "Adelio": [
         "SO","SO","SO","SO","FR","SO","SO","SO","SO","FR",
         "SO","SO","SO","FR","SO","SO","FR","FS","FS","RE",
@@ -557,10 +568,6 @@ const ESCALA_MENSAL = {
         "FE","FE","FE","FE","FE","FE","FE","FE","FE","FE",
         "RE","SO","SO","SO","SO","SO","FR","SO","SO","SO","SO"
     ],
-
-    // =========================================================
-    // COPILOTOS
-    // =========================================================
     "Cauê": [
         "SO","SO","FR","FS","FS","RE","SO","SO","SO","SO",
         "FR","SO","SO","SO","FR","SO","SO","SO","SO","FR",
@@ -612,6 +619,7 @@ const ESCALA_MENSAL = {
         "SO","SO","SO","SO","FR","FS","FS","RE","SO","SO","SO"
     ]
 };
+
 const GRUPOS_PILOTO = {
     "CARAVAN": ["Cleiton","Joao","Pascoal","Lindomar","Perisson","Rui","Yago"],
     "COPILOTO": ["Cauê","Felipe","Ruben","Ernesto","Daniela","Thales","Serafim","Ronaldo","Rodrigo","Tiago"],
@@ -766,20 +774,16 @@ function ativarEdicaoDia(diaIndex) {
         if (!inp) return;
 
         if (status === "SO") {
-            // SO: esvazia e habilita
             inp.disabled = false;
             inp.value = "";
             inp.placeholder = "0,0";
             inp.removeAttribute('data-status');
             inp.classList.remove('has-value');
         } else if (isStatusBloqueado(status)) {
-            // Bloqueados (FR, FE, DM, etc): mantém disabled
             inp.disabled = true;
         } else if (STATUS_EDITAVEL_LONGPRESS.includes(status)) {
-            // FS, RE: editável apenas via long press
             inp.disabled = true;
         } else {
-            // VO, CQ, TN: editável normalmente
             inp.disabled = false;
             inp.placeholder = "0,0";
         }
@@ -860,40 +864,70 @@ async function salvarStatusNoBackend(nome, dia, novoStatus) {
     } catch(e) { showToast('❌ Erro ao salvar status'); }
 }
 
-// ===== COMPARATIVO — GRÁFICO DE BARRAS MENSAL =====
+// ===== COMPARATIVO — LISTA DE HORAS ACUMULADAS (ORDENADA) =====
 function mostrarComparativoDia(diaIndex) {
     const diaNumero = diaIndex + 1;
     const mesAtual = document.getElementById('campoMes').value.trim() || "Julho";
 
-    // Coleta total por dia no mês inteiro
-    const totaisPorDia = [];
-    for (let d = 0; d < DIAS; d++) {
-        totaisPorDia.push({ dia: d+1, total: totalHorasDia(d) });
-    }
-    const maxTotal = Math.max(...totaisPorDia.map(d => d.total), 0.1);
-
-    let html = `<div class="card-detalhe">
-        <h2 style="text-align:center;margin-bottom:4px;">📊 Horas por Dia — ${mesAtual}</h2>
-        <p style="text-align:center;font-size:0.8rem;color:#7a5000;margin-bottom:12px;">Dia selecionado: <strong>${String(diaNumero).padStart(2,'0')}</strong></p>
-        <div class="grafico-barras">`;
-
-    totaisPorDia.forEach(({ dia, total }) => {
-        const pct = maxTotal > 0 ? (total / maxTotal) * 100 : 0;
-        const ativo = dia === diaNumero;
-        const corBarra = ativo
-            ? 'background: linear-gradient(to right, #e6a800, #ffcc00);'
-            : total === 0 ? 'background: #ccc;' : '';
-        html += `<div class="grafico-linha">
-            <span class="grafico-label" style="${ativo ? 'color:#b07000;font-weight:900;' : ''}">${String(dia).padStart(2,'0')}</span>
-            <div class="grafico-barra-wrap">
-                <div class="grafico-barra-fill ${total===0?'zero':''}" style="width:${pct}%;${corBarra}">
-                    ${total > 0 ? `<span class="grafico-barra-valor">${formatarHora(total)}h</span>` : ''}
-                </div>
-            </div>
-        </div>`;
+    // Coleta as horas de todos os pilotos
+    const pilotos = [];
+    document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
+        const nome = getNomeFromRow(row);
+        let total = 0;
+        row.querySelectorAll('.input-hora').forEach(inp => {
+            total += parseHora(inp.value);
+        });
+        pilotos.push({ nome, total });
     });
 
-    html += `</div><button class="btn-fechar" id="fecharDetalhe">Fechar</button></div>`;
+    // Ordena por horas totais (decrescente)
+    pilotos.sort((a, b) => b.total - a.total);
+
+    // Encontra o maior valor para a barra de progresso
+    const maxTotal = Math.max(...pilotos.map(p => p.total), 0.1);
+
+    let html = `<div class="card-detalhe">
+        <h2 style="text-align:center;margin-bottom:4px;">📊 Horas Acumuladas — ${mesAtual}</h2>
+        <p style="text-align:center;font-size:0.8rem;color:#7a5000;margin-bottom:12px;">
+            Total de pilotos: <strong>${pilotos.length}</strong>
+        </p>
+        <div style="overflow-x: auto;">
+            <table class="tabela-detalhe" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th style="text-align: center; width: 40px;">#</th>
+                        <th style="text-align: left;">Piloto</th>
+                        <th style="text-align: center; width: 80px;">Horas</th>
+                        <th style="text-align: center;">Progresso</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+    pilotos.forEach((p, idx) => {
+        const perc = maxTotal > 0 ? (p.total / maxTotal) * 100 : 0;
+        const horasDisplay = p.total === 0 ? '—' : formatarHora(p.total);
+        let medalha = '';
+        if (idx === 0) medalha = '🥇 ';
+        else if (idx === 1) medalha = '🥈 ';
+        else if (idx === 2) medalha = '🥉 ';
+
+        html += `<tr>
+            <td style="text-align: center; font-weight: bold;">${idx + 1}</td>
+            <td style="text-align: left; font-weight: 500;">${medalha}${p.nome}</td>
+            <td style="text-align: center; font-weight: bold; color: ${p.total > 0 ? '#2a8a2a' : '#aaa'};">
+                ${horasDisplay}
+            </td>
+            <td style="min-width: 100px;">
+                <div class="progress-bar-wrap">
+                    <div class="barra-fill" style="width: ${perc}%;"></div>
+                </div>
+            </td>
+        </tr>`;
+    });
+
+    html += `</tbody></table></div>
+        <button class="btn-fechar" id="fecharDetalhe">Fechar</button>
+    </div>`;
 
     const modal = document.createElement('div');
     modal.className = 'modal-detalhe';
@@ -950,7 +984,7 @@ function mostrarMenuDia(diaIndex, btn) {
             <h3>📅 Dia ${diaNum}</h3>
             <div class="menu-dia-opcoes">
                 ${isEditing ? `<button class="btn-menu-opcao" id="menuEditar">✏️ Editar horas</button>` : ''}
-                <button class="btn-menu-opcao" id="menuComparativo">📊 Gráfico mensal</button>
+                <button class="btn-menu-opcao" id="menuComparativo">📊 Ranking de horas</button>
                 <button class="btn-menu-opcao" id="menuDisponiveis">👥 Disponíveis dia ${String(diaIndex+2).padStart(2,'0')}</button>
                 <button class="btn-menu-cancelar" id="menuCancelar">Cancelar</button>
             </div>
@@ -1289,7 +1323,6 @@ document.getElementById('btnSairDia').onclick = sairEdicaoDia;
 document.getElementById('btnAjuda').onclick = mostrarAjuda;
 
 // ===== INICIALIZAÇÃO =====
-// Restaurar mês salvo antes de carregar
 const mesSalvo = obterMesDoStorage();
 if (mesSalvo) {
     document.getElementById('campoMes').value = mesSalvo;
@@ -1297,4 +1330,4 @@ if (mesSalvo) {
 carregarDoBackend();
 </script>
 </body>
-</html>
+    </html>
