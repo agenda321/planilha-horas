@@ -741,28 +741,7 @@ function atualizarTotaisBotoesDias() {
     });
 }
 
-function sairEdicaoDia() {
-    if (diaEditandoIndex !== null) {
-        // Restaura SO nos campos sem valor
-        document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
-            const nome = getNomeFromRow(row);
-            const status = ESCALA_MENSAL[nome]?.[diaEditandoIndex] || "";
-            const inp = row.cells[diaEditandoIndex+1]?.querySelector('.input-hora');
-            if (inp && status === "SO" && parseHora(inp.value) === 0) {
-                inp.value = "";
-                inp.setAttribute('data-status', 'default');
-            }
-        });
-        diaEditandoIndex = null;
-        document.getElementById('badgeDiaEdicao').classList.remove('visivel');
-        document.getElementById('btnSairDia').style.display = 'none';
-        document.querySelectorAll('.btn-dia').forEach(btn => btn.classList.remove('dia-editando'));
-        limparDestaqueColuna();
-        document.querySelectorAll('.input-hora').forEach(inp => inp.disabled = true);
-        recalcularTudo();
-    }
-}
-
+// ===== FUNÇÃO CORRIGIDA: ativarEdicaoDia =====
 function ativarEdicaoDia(diaIndex) {
     if (diaEditandoIndex !== null && diaEditandoIndex !== diaIndex) sairEdicaoDia();
     diaEditandoIndex = diaIndex;
@@ -774,11 +753,15 @@ function ativarEdicaoDia(diaIndex) {
         if (!inp) return;
 
         if (status === "SO") {
+            const valorAtual = parseHora(inp.value);
             inp.disabled = false;
-            inp.value = "";
             inp.placeholder = "0,0";
             inp.removeAttribute('data-status');
             inp.classList.remove('has-value');
+            // Se não tiver horas (0) e não for um status, limpa; senão mantém
+            if (valorAtual === 0 && !getStatusFromValue(inp.value)) {
+                inp.value = "";
+            }
         } else if (isStatusBloqueado(status)) {
             inp.disabled = true;
         } else if (STATUS_EDITAVEL_LONGPRESS.includes(status)) {
@@ -798,6 +781,28 @@ function ativarEdicaoDia(diaIndex) {
     document.getElementById('btnSairDia').style.display = 'inline-block';
     document.querySelectorAll('.btn-dia').forEach((btn,i) => btn.classList.toggle('dia-editando', i===diaIndex));
     showToast(`✏️ Dia ${diaNum} — SO liberados | Long press em FS/RE para editar`);
+}
+
+// ===== FUNÇÃO CORRIGIDA: sairEdicaoDia =====
+function sairEdicaoDia() {
+    if (diaEditandoIndex !== null) {
+        document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
+            const nome = getNomeFromRow(row);
+            const status = ESCALA_MENSAL[nome]?.[diaEditandoIndex] || "";
+            const inp = row.cells[diaEditandoIndex+1]?.querySelector('.input-hora');
+            if (inp && status === "SO" && parseHora(inp.value) === 0 && !getStatusFromValue(inp.value)) {
+                inp.value = "";
+                inp.setAttribute('data-status', 'default');
+            }
+        });
+        diaEditandoIndex = null;
+        document.getElementById('badgeDiaEdicao').classList.remove('visivel');
+        document.getElementById('btnSairDia').style.display = 'none';
+        document.querySelectorAll('.btn-dia').forEach(btn => btn.classList.remove('dia-editando'));
+        limparDestaqueColuna();
+        document.querySelectorAll('.input-hora').forEach(inp => inp.disabled = true);
+        recalcularTudo();
+    }
 }
 
 function destacarColuna(diaIndex) {
@@ -869,7 +874,6 @@ function mostrarComparativoDia(diaIndex) {
     const diaNumero = diaIndex + 1;
     const mesAtual = document.getElementById('campoMes').value.trim() || "Julho";
 
-    // Coleta as horas de todos os pilotos
     const pilotos = [];
     document.querySelectorAll('#tabelaHoras tbody tr.membro-row').forEach(row => {
         const nome = getNomeFromRow(row);
@@ -880,10 +884,8 @@ function mostrarComparativoDia(diaIndex) {
         pilotos.push({ nome, total });
     });
 
-    // Ordena por horas totais (decrescente)
     pilotos.sort((a, b) => b.total - a.total);
 
-    // Encontra o maior valor para a barra de progresso
     const maxTotal = Math.max(...pilotos.map(p => p.total), 0.1);
 
     let html = `<div class="card-detalhe">
@@ -1008,7 +1010,7 @@ function getMesNumero(nomeMes) {
     return mapa[nomeMes.toLowerCase()] || new Date().getMonth() + 1;
 }
 
-// ===== CARREGAMENTO (COM MÊS DINÂMICO E PERSISTÊNCIA) =====
+// ===== CARREGAMENTO =====
 async function carregarDoBackend() {
     const syncSpan = document.getElementById('syncStatus');
     syncSpan.innerHTML = '⏳ Carregando...';
@@ -1073,7 +1075,6 @@ async function carregarDoBackend() {
                     atualizarCorInput(inp);
                     inp.disabled = true;
 
-                    // Long press em FS/RE
                     let lpTimer = null;
                     inp.addEventListener('touchstart', () => {
                         lpTimer = setTimeout(() => {
@@ -1126,7 +1127,7 @@ async function carregarDoBackend() {
     }
 }
 
-// ===== SALVAMENTO (COM MÊS DINÂMICO) =====
+// ===== SALVAMENTO =====
 async function salvarNoBackend() {
     if (!isEditing || !password) return;
     const syncSpan = document.getElementById('syncStatus');
@@ -1330,4 +1331,4 @@ if (mesSalvo) {
 carregarDoBackend();
 </script>
 </body>
-    </html>
+</html>
